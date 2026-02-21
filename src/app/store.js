@@ -6,6 +6,7 @@ import dashboardReducer from '../features/dashboard/dashboardSlice';
 import plansReducer from '../features/plans/plansSlice';
 import filtersReducer from '../features/filters/filterSlice';
 import billingReducer from '../features/billing/billingSlice';
+import importReducer from '../features/import/importSlice';
 
 export const store = configureStore({
   reducer: {
@@ -16,5 +17,6 @@ export const store = configureStore({
     plans: plansReducer,
     filters: filtersReducer,
     billing: billingReducer,
+    import: importReducer,
   },
 });

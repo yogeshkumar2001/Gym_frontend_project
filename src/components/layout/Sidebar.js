@@ -43,7 +43,7 @@ const menuItems = [
   {
     key: '/upload',
     icon: <CloudUploadOutlined />,
-    label: 'Upload',
+    label: 'Import CSV',
   },
 ];
 

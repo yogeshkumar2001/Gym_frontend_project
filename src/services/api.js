@@ -47,4 +47,10 @@ export const buildQueryParams = (filters = {}) => {
   return params;
 };
 
+// ─── CSV Import API (future backend endpoint) ─────────────────────────────────
+// Usage: importMembersFromCsv({ mappedData, options })
+//   POST /import/members  →  { success: number, failed: number, errors: [] }
+export const importMembersFromCsv = ({ mappedData, options = {} }) =>
+  api.post('/import/members', { mappedData, options });
+
 export default api;

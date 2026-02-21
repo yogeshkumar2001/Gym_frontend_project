@@ -7,6 +7,7 @@ import Login from '../pages/Login';
 import Members from '../pages/Members';
 import Payments from '../pages/Payments';
 import Invoices from '../pages/Invoices';
+import Import from '../pages/Import';
 
 // ─── Protected Route Guard ────────────────────────────────────────────────────
 const ProtectedRoute = ({ children }) => {
@@ -73,7 +74,7 @@ const AppRoutes = () => {
         path="/upload"
         element={
           <ProtectedRoute>
-            <div>Upload — Coming Soon</div>
+            <Import />
           </ProtectedRoute>
         }
       />
