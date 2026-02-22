@@ -11,6 +11,12 @@ import Import from '../pages/Import';
 import Notifications from '../pages/Notifications';
 import Analytics from '../pages/Analytics';
 import PerformancePage from '../pages/PerformancePage';
+import Plans from '../pages/Plans';
+import MemberProfile from '../pages/MemberProfile';
+import Workouts from '../pages/Workouts';
+import WorkoutBuilder from '../pages/WorkoutBuilder';
+import Diets from '../pages/Diets';
+import DietBuilder from '../pages/DietBuilder';
 
 // ─── Protected Route Guard ────────────────────────────────────────────────────
 const ProtectedRoute = ({ children }) => {
@@ -42,6 +48,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Members />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/members/:id"
+        element={
+          <ProtectedRoute>
+            <MemberProfile />
           </ProtectedRoute>
         }
       />
@@ -91,12 +106,61 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Placeholder routes — future phases */}
       <Route
         path="/plans"
         element={
           <ProtectedRoute>
-            <div>Plans — Coming Soon</div>
+            <Plans />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/workouts"
+        element={
+          <ProtectedRoute>
+            <Workouts />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/workouts/new"
+        element={
+          <ProtectedRoute>
+            <WorkoutBuilder />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/workouts/edit/:id"
+        element={
+          <ProtectedRoute>
+            <WorkoutBuilder />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/diets"
+        element={
+          <ProtectedRoute>
+            <Diets />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/diets/new"
+        element={
+          <ProtectedRoute>
+            <DietBuilder />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/diets/edit/:id"
+        element={
+          <ProtectedRoute>
+            <DietBuilder />
           </ProtectedRoute>
         }
       />

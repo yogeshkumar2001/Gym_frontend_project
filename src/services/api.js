@@ -63,6 +63,48 @@ export const fetchNotificationCandidates = (params) =>
 export const fetchAnalyticsData = (params) =>
   api.get('/analytics/data', { params: buildQueryParams(params) });
 
+// ─── Assignment API (future backend endpoints) ────────────────────────────────
+// POST /members/:id/workout-assignment  →  { assignment }
+// POST /members/:id/diet-assignment     →  { assignment }
+// GET  /members/:id/assignments         →  { workoutAssignments, dietAssignments }
+export const fetchMemberAssignments   = (memberId)       => api.get(`/members/${memberId}/assignments`);
+export const assignMemberWorkout      = (memberId, data) => api.post(`/members/${memberId}/workout-assignment`, data);
+export const assignMemberDiet         = (memberId, data) => api.post(`/members/${memberId}/diet-assignment`, data);
+
+// ─── Diets API (future backend endpoints) ────────────────────────────────────
+// GET /diets/templates          → [DietTemplate]
+// GET /diets/templates/:id      → DietTemplate
+// POST /diets/templates         → created template
+// PUT /diets/templates/:id      → updated template
+// DELETE /diets/templates/:id   → { success: true }
+export const fetchDietTemplates    = ()           => api.get('/diets/templates');
+export const fetchDietTemplateById = (id)         => api.get(`/diets/templates/${id}`);
+export const createDietTemplate    = (data)       => api.post('/diets/templates', data);
+export const updateDietTemplate    = (id, data)   => api.put(`/diets/templates/${id}`, data);
+export const removeDietTemplate    = (id)         => api.delete(`/diets/templates/${id}`);
+
+// ─── Workouts API (future backend endpoints) ─────────────────────────────────
+// GET /workouts/templates          → [WorkoutTemplate]
+// GET /workouts/templates/:id      → WorkoutTemplate
+// POST /workouts/templates         → created template
+// PUT /workouts/templates/:id      → updated template
+// DELETE /workouts/templates/:id   → { success: true }
+export const fetchWorkoutTemplates    = ()           => api.get('/workouts/templates');
+export const fetchWorkoutTemplateById = (id)         => api.get(`/workouts/templates/${id}`);
+export const createWorkoutTemplate    = (data)       => api.post('/workouts/templates', data);
+export const updateWorkoutTemplate    = (id, data)   => api.put(`/workouts/templates/${id}`, data);
+export const removeWorkoutTemplate    = (id)         => api.delete(`/workouts/templates/${id}`);
+
+// ─── Plans API (future backend endpoints) ────────────────────────────────────
+// GET /plans                → [{ id, name, description, durationMonths, price, status }]
+// POST /plans               → created plan
+// PUT /plans/:id            → updated plan
+// DELETE /plans/:id         → { success: true }
+export const fetchPlans   = ()           => api.get('/plans');
+export const createPlan   = (data)       => api.post('/plans', data);
+export const patchPlan    = (id, data)   => api.put(`/plans/${id}`, data);
+export const removePlan   = (id)         => api.delete(`/plans/${id}`);
+
 // ─── CSV Import API (future backend endpoint) ─────────────────────────────────
 // Usage: importMembersFromCsv({ mappedData, options })
 //   POST /import/members  →  { success: number, failed: number, errors: [] }

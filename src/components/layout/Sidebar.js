@@ -11,6 +11,8 @@ import {
   BellOutlined,
   BarChartOutlined,
   LineChartOutlined,
+  ThunderboltOutlined,
+  FireOutlined,
 } from '@ant-design/icons';
 import { colors } from '../../theme/theme';
 
@@ -57,6 +59,16 @@ const menuItems = [
     key: '/plans',
     icon: <FileTextOutlined />,
     label: 'Plans',
+  },
+  {
+    key: '/workouts',
+    icon: <ThunderboltOutlined />,
+    label: 'Workouts',
+  },
+  {
+    key: '/diets',
+    icon: <FireOutlined />,
+    label: 'Diets',
   },
   {
     key: '/upload',

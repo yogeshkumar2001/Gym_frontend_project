@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Table, Tag, Button, Space, Tooltip, Card } from 'antd';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { PLAN_CONFIG, STATUS_CONFIG } from '../../constants/memberConstants';
 import { formatDate, isExpired } from '../../utils/dateUtils';
@@ -9,7 +10,7 @@ import { colors } from '../../theme/theme';
 // ─── Column Definitions ───────────────────────────────────────────────────────
 // Extracted to a factory function so handlers can be injected without
 // re-creating the array on every render (see useMemo below).
-const buildColumns = (onEdit, onDelete) => [
+const buildColumns = (onEdit, onDelete, onViewProfile) => [
   {
     title: 'ID',
     dataIndex: 'id',
@@ -111,9 +112,17 @@ const buildColumns = (onEdit, onDelete) => [
     title: 'Actions',
     key: 'actions',
     fixed: 'right',
-    width: 90,
+    width: 120,
     render: (_, record) => (
       <Space size={4}>
+        <Tooltip title="View profile">
+          <Button
+            type="text"
+            icon={<EyeOutlined />}
+            size="small"
+            onClick={() => onViewProfile(record.id)}
+          />
+        </Tooltip>
         <Tooltip title="Edit member">
           <Button
             type="text"
@@ -148,9 +157,10 @@ const paginationConfig = {
 
 // ─── MembersTable ─────────────────────────────────────────────────────────────
 const MembersTable = ({ data, loading, onEdit, onDelete }) => {
+  const navigate   = useNavigate();
   const columns = useMemo(
-    () => buildColumns(onEdit, onDelete),
-    [onEdit, onDelete]
+    () => buildColumns(onEdit, onDelete, (id) => navigate(`/members/${id}`)),
+    [onEdit, onDelete, navigate]
   );
 
   return (
