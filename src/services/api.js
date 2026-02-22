@@ -47,6 +47,22 @@ export const buildQueryParams = (filters = {}) => {
   return params;
 };
 
+// ─── Notifications API (future backend endpoints) ─────────────────────────────
+// POST /notifications/send  →  { success: true, channel, memberId }
+export const sendNotification = ({ memberId, type, channel = 'sms' }) =>
+  api.post('/notifications/send', { memberId, type, channel });
+
+// GET /notifications/candidates?startDate=...&endDate=...&reminderDays=...
+export const fetchNotificationCandidates = (params) =>
+  api.get('/notifications/candidates', { params: buildQueryParams(params) });
+
+// ─── Analytics API (future backend endpoint) ──────────────────────────────────
+// Usage: fetchAnalyticsData({ metric, dimension, startDate, endDate, plan, status })
+//   GET /analytics/data?metric=revenue&dimension=month&...
+//   → { data: [{ name, value }, ...], total, dataPoints, max }
+export const fetchAnalyticsData = (params) =>
+  api.get('/analytics/data', { params: buildQueryParams(params) });
+
 // ─── CSV Import API (future backend endpoint) ─────────────────────────────────
 // Usage: importMembersFromCsv({ mappedData, options })
 //   POST /import/members  →  { success: number, failed: number, errors: [] }

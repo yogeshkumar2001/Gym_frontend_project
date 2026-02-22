@@ -8,6 +8,9 @@ import {
   FileTextOutlined,
   AuditOutlined,
   CloudUploadOutlined,
+  BellOutlined,
+  BarChartOutlined,
+  LineChartOutlined,
 } from '@ant-design/icons';
 import { colors } from '../../theme/theme';
 
@@ -19,6 +22,11 @@ const menuItems = [
     key: '/',
     icon: <DashboardOutlined />,
     label: 'Dashboard',
+  },
+  {
+    key: '/performance',
+    icon: <LineChartOutlined />,
+    label: 'Performance',
   },
   {
     key: '/members',
@@ -34,6 +42,16 @@ const menuItems = [
     key: '/invoices',
     icon: <AuditOutlined />,
     label: 'Invoices',
+  },
+  {
+    key: '/notifications',
+    icon: <BellOutlined />,
+    label: 'Notifications',
+  },
+  {
+    key: '/analytics',
+    icon: <BarChartOutlined />,
+    label: 'Analytics',
   },
   {
     key: '/plans',

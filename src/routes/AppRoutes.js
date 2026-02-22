@@ -8,6 +8,9 @@ import Members from '../pages/Members';
 import Payments from '../pages/Payments';
 import Invoices from '../pages/Invoices';
 import Import from '../pages/Import';
+import Notifications from '../pages/Notifications';
+import Analytics from '../pages/Analytics';
+import PerformancePage from '../pages/PerformancePage';
 
 // ─── Protected Route Guard ────────────────────────────────────────────────────
 const ProtectedRoute = ({ children }) => {
@@ -57,6 +60,33 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Invoices />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <Notifications />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/performance"
+        element={
+          <ProtectedRoute>
+            <PerformancePage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <Analytics />
           </ProtectedRoute>
         }
       />

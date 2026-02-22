@@ -7,6 +7,8 @@ import plansReducer from '../features/plans/plansSlice';
 import filtersReducer from '../features/filters/filterSlice';
 import billingReducer from '../features/billing/billingSlice';
 import importReducer from '../features/import/importSlice';
+import notificationsReducer from '../features/notifications/notificationsSlice';
+import analyticsReducer from '../features/analytics/analyticsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -18,5 +20,7 @@ export const store = configureStore({
     filters: filtersReducer,
     billing: billingReducer,
     import: importReducer,
+    notifications: notificationsReducer,
+    analytics: analyticsReducer,
   },
 });
