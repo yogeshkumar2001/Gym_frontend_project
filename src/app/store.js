@@ -5,7 +5,6 @@ import paymentsReducer from '../features/payments/paymentsSlice';
 import dashboardReducer from '../features/dashboard/dashboardSlice';
 import plansReducer from '../features/plans/plansSlice';
 import filtersReducer from '../features/filters/filterSlice';
-import billingReducer from '../features/billing/billingSlice';
 import importReducer from '../features/import/importSlice';
 import notificationsReducer from '../features/notifications/notificationsSlice';
 import analyticsReducer from '../features/analytics/analyticsSlice';
@@ -20,7 +19,6 @@ export const store = configureStore({
     dashboard: dashboardReducer,
     plans: plansReducer,
     filters: filtersReducer,
-    billing: billingReducer,
     import: importReducer,
     notifications: notificationsReducer,
     analytics: analyticsReducer,

@@ -1,9 +1,9 @@
 import React from 'react';
-import { Form, Input, Button, Card, Typography, Divider } from 'antd';
+import { Alert, Form, Input, Button, Card, Typography, Divider } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { loginStart, loginSuccess, loginFailure } from '../features/auth/authSlice';
+import { loginThunk } from '../features/auth/authSlice';
 import { colors } from '../theme/theme';
 
 const { Title, Text } = Typography;
@@ -11,19 +11,15 @@ const { Title, Text } = Typography;
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading } = useSelector((state) => state.auth);
+  const { loading, error } = useSelector((state) => state.auth);
 
-  const onFinish = (values) => {
-    dispatch(loginStart());
-    // Mock auth — replace with real API call later
-    setTimeout(() => {
-      if (values.email && values.password) {
-        dispatch(loginSuccess({ email: values.email, name: 'Admin' }));
-        navigate('/');
-      } else {
-        dispatch(loginFailure('Invalid credentials'));
-      }
-    }, 600);
+  const onFinish = async (values) => {
+    try {
+      await dispatch(loginThunk(values)).unwrap();
+      navigate('/');
+    } catch {
+      // error is already set in state.auth.error via rejected handler
+    }
   };
 
   return (
@@ -62,6 +58,10 @@ const Login = () => {
         </div>
 
         <Divider />
+
+        {error && (
+          <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />
+        )}
 
         <Form layout="vertical" onFinish={onFinish} requiredMark={false}>
           <Form.Item

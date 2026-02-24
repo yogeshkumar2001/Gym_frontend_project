@@ -15,7 +15,7 @@ export const applyMapping = (parsedData, columnMapping) =>
     phone:       columnMapping.phone       ? (row[columnMapping.phone]       || '') : '',
     email:       columnMapping.email       ? (row[columnMapping.email]       || '') : '',
     plan:        columnMapping.plan        ? (row[columnMapping.plan]        || 'monthly').toLowerCase() : 'monthly',
-    joiningDate: columnMapping.joiningDate ? (row[columnMapping.joiningDate] || '') : '',
+    joinDate:    columnMapping.joinDate    ? (row[columnMapping.joinDate]    || '') : '',
     expiryDate:  columnMapping.expiryDate  ? (row[columnMapping.expiryDate]  || '') : '',
     feeAmount:   columnMapping.feeAmount   ? (row[columnMapping.feeAmount]   || '') : '',
     status:      columnMapping.status      ? (row[columnMapping.status]      || 'active') : 'active',
@@ -31,7 +31,7 @@ export const validateRow = (row, index) => {
   if (!row.phone?.trim())
     errors.push('Phone is required');
 
-  if (row.joiningDate && !dayjs(row.joiningDate, 'YYYY-MM-DD', true).isValid())
+  if (row.joinDate && !dayjs(row.joinDate, 'YYYY-MM-DD', true).isValid())
     errors.push('Invalid date format — expected YYYY-MM-DD');
 
   if (row.feeAmount && isNaN(parseFloat(row.feeAmount)))
@@ -56,8 +56,8 @@ export const validateAllRows = (mappedData) =>
 export const buildMemberRecord = (validRow, existingMembersCount) => {
   const planId   = VALID_PLANS.includes(validRow.plan) ? validRow.plan : 'monthly';
   const planCfg  = PLAN_CONFIG[planId];
-  const joining  = validRow.joiningDate
-    ? dayjs(validRow.joiningDate).toISOString()
+  const joining  = validRow.joinDate
+    ? dayjs(validRow.joinDate).toISOString()
     : dayjs().toISOString();
   const expiry   = validRow.expiryDate
     ? dayjs(validRow.expiryDate).toISOString()
@@ -72,7 +72,7 @@ export const buildMemberRecord = (validRow, existingMembersCount) => {
     email:           validRow.email?.trim() || '',
     planId,
     planName:        planCfg.name,
-    joiningDate:     joining,
+    joinDate:        joining,
     expiryDate:      expiry,
     status:          isActive ? 'active' : 'expired',
     feeAmount:       fee,
@@ -83,7 +83,7 @@ export const buildMemberRecord = (validRow, existingMembersCount) => {
 // ─── Build a payment record from a member record ──────────────────────────────
 export const buildPaymentRecord = (member, existingPaymentsCount) => {
   const planCfg   = PLAN_CONFIG[member.planId];
-  const nextDue   = dayjs(member.joiningDate).add(planCfg.months, 'month').toISOString();
+  const nextDue   = dayjs(member.joinDate).add(planCfg.months, 'month').toISOString();
 
   return {
     id:          Date.now() + existingPaymentsCount + member.id,
@@ -92,7 +92,7 @@ export const buildPaymentRecord = (member, existingPaymentsCount) => {
     planId:      member.planId,
     planName:    member.planName,
     amount:      member.feeAmount,
-    paymentDate: member.joiningDate,
+    paymentDate: member.joinDate,
     status:      'paid',
     method:      'cash',
     nextDueDate: nextDue,

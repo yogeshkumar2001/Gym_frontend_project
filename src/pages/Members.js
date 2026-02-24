@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { Typography, Button, Form, Modal, Row, Col, Statistic, Card } from 'antd';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Typography, Button, Form, Modal, Row, Col, Statistic, Card, message, Alert } from 'antd';
 import {
   PlusOutlined,
   TeamOutlined,
@@ -9,9 +9,10 @@ import {
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  addMember,
-  updateMember,
-  deleteMember,
+  fetchMembersThunk,
+  createMemberThunk,
+  updateMemberThunk,
+  deleteMemberThunk,
 } from '../features/members/membersSlice';
 import {
   selectFilteredMembers,
@@ -78,9 +79,13 @@ const Members = () => {
   const dispatch = useDispatch();
   const [form] = Form.useForm();
   const [modalState, setModalState] = useState({ open: false, member: null });
+  const [messageApi, contextHolder] = message.useMessage();
+
+  useEffect(() => { dispatch(fetchMembersThunk()); }, [dispatch]);
 
   const filteredMembers = useSelector(selectFilteredMembers);
-  const loading = useSelector(selectMembersLoading);
+  const loading         = useSelector(selectMembersLoading);
+  const fetchError      = useSelector((s) => s.members.error);
 
   // ── Modal helpers ──────────────────────────────────────────────────────────
   const openAdd = useCallback(() => {
@@ -106,15 +111,22 @@ const Members = () => {
         okText: 'Delete',
         okType: 'danger',
         cancelText: 'Cancel',
-        onOk: () => dispatch(deleteMember(id)),
+        onOk: async () => {
+          try {
+            await dispatch(deleteMemberThunk(id)).unwrap();
+            messageApi.success('Member deleted.');
+          } catch {
+            messageApi.error('Failed to delete member.');
+          }
+        },
       });
     },
-    [dispatch]
+    [dispatch, messageApi]
   );
 
   // ── Form submit (Add / Edit) ───────────────────────────────────────────────
   const handleFormSubmit = useCallback(
-    (values) => {
+    async (values) => {
       const joiningDate = values.joiningDate.startOf('day').toISOString();
       const expiryDate = values.joiningDate
         .add(values.duration, 'month')
@@ -123,40 +135,32 @@ const Members = () => {
       const planName =
         FORM_PLAN_OPTIONS.find((p) => p.value === values.planId)?.label ?? '';
 
-      if (modalState.member) {
-        // ── Edit ──
-        dispatch(
-          updateMember({
-            ...modalState.member,        // preserve id, lastPaymentDate
-            ...values,
-            joiningDate,
-            expiryDate,
-            planName,
-          })
-        );
-      } else {
-        // ── Add ──
-        // Note: id uses Date.now() for local state.
-        // Replace with response.data.id when backend is integrated.
-        dispatch(
-          addMember({
-            id: Date.now(),
-            ...values,
-            joiningDate,
-            expiryDate,
-            planName,
-            lastPaymentDate: joiningDate,
-          })
-        );
+      try {
+        if (modalState.member) {
+          await dispatch(
+            updateMemberThunk({
+              id: modalState.member.id,
+              data: { ...modalState.member, ...values, joiningDate, expiryDate, planName },
+            })
+          ).unwrap();
+          messageApi.success('Member updated.');
+        } else {
+          await dispatch(
+            createMemberThunk({ ...values, joiningDate, expiryDate, planName, lastPaymentDate: joiningDate })
+          ).unwrap();
+          messageApi.success('Member added.');
+        }
+        closeModal();
+      } catch (err) {
+        messageApi.error(typeof err === 'string' ? err : 'Operation failed.');
       }
-
-      closeModal();
     },
-    [dispatch, modalState.member, closeModal]
+    [dispatch, modalState.member, closeModal, messageApi]
   );
 
   return (
     <div>
+      {contextHolder}
       {/* Page Header */}
       <div
         style={{
@@ -173,6 +177,17 @@ const Members = () => {
           Add Member
         </Button>
       </div>
+
+      {/* API error banner */}
+      {fetchError && (
+        <Alert
+          type="error"
+          message="Failed to load members"
+          description={fetchError}
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
 
       {/* Quick Stats */}
       <SummaryCards />

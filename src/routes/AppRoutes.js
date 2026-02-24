@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { restoreSessionThunk } from '../features/auth/authSlice';
 import Layout from '../components/layout/Layout';
 import Dashboard from '../pages/Dashboard';
 import Login from '../pages/Login';
@@ -20,7 +21,8 @@ import DietBuilder from '../pages/DietBuilder';
 
 // ─── Protected Route Guard ────────────────────────────────────────────────────
 const ProtectedRoute = ({ children }) => {
-  const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const { isAuthenticated, isRestoring } = useSelector((state) => state.auth);
+  if (isRestoring) return null; // wait — prevents flash-redirect to /login
   return isAuthenticated ? (
     <Layout>{children}</Layout>
   ) : (
@@ -30,6 +32,11 @@ const ProtectedRoute = ({ children }) => {
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 const AppRoutes = () => {
+  const dispatch = useDispatch();
+
+  // Attempt to restore session from token on every cold load
+  useEffect(() => { dispatch(restoreSessionThunk()); }, [dispatch]);
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />

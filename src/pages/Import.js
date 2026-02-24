@@ -10,10 +10,10 @@ import { useDispatch, useSelector } from 'react-redux';
 // ── Redux ────────────────────────────────────────────────────────────────────
 import {
   setCurrentStep, setMappedData, setValidationResult,
-  setImportSummary, resetImport,
+  setImportSummary, resetImport, importMembersThunk,
 } from '../features/import/importSlice';
-import { addMember } from '../features/members/membersSlice';
-import { addPayment } from '../features/payments/paymentsSlice';
+import { fetchMembersThunk } from '../features/members/membersSlice';
+import { fetchPaymentsThunk } from '../features/payments/paymentsSlice';
 
 // ── Import step components ───────────────────────────────────────────────────
 import FileUploadSection    from '../components/import/FileUploadSection';
@@ -23,7 +23,7 @@ import ValidationSummary    from '../components/import/ValidationSummary';
 import ImportResultSection  from '../components/import/ImportResultSection';
 
 // ── Utils ────────────────────────────────────────────────────────────────────
-import { applyMapping, validateAllRows, buildMemberRecord, buildPaymentRecord } from '../utils/importUtils';
+import { applyMapping, validateAllRows } from '../utils/importUtils';
 
 const { Title, Text } = Typography;
 
@@ -40,14 +40,11 @@ const Import = () => {
   const dispatch   = useDispatch();
   const [messageApi, contextHolder] = message.useMessage();
 
-  const currentStep    = useSelector((s) => s.import.currentStep);
-  const parsedData     = useSelector((s) => s.import.parsedData);
-  const columnMapping  = useSelector((s) => s.import.columnMapping);
+  const currentStep      = useSelector((s) => s.import.currentStep);
+  const parsedData       = useSelector((s) => s.import.parsedData);
+  const columnMapping    = useSelector((s) => s.import.columnMapping);
   const validationResult = useSelector((s) => s.import.validationResult);
-
-  // Members and payments lists (for id generation)
-  const membersList   = useSelector((s) => s.members.list);
-  const paymentsList  = useSelector((s) => s.payments.list);
+  const importLoading    = useSelector((s) => s.import.loading);
 
   // ── Step navigation ─────────────────────────────────────────────────────────
   const goTo = useCallback((step) => dispatch(setCurrentStep(step)), [dispatch]);
@@ -65,7 +62,7 @@ const Import = () => {
   };
 
   // ── Step 3 → 4: execute import ──────────────────────────────────────────────
-  const handleImport = () => {
+  const handleImport = async () => {
     const validRows = validationResult.filter((r) => r.isValid);
 
     if (validRows.length === 0) {
@@ -73,29 +70,30 @@ const Import = () => {
       return;
     }
 
-    let successCount = 0;
+    // Strip internal validation metadata before sending to API
+    const mappedData = validRows.map(({ isValid, errors, rowIndex, ...row }) => row);
 
-    validRows.forEach((row, idx) => {
-      const member  = buildMemberRecord(row, membersList.length + idx);
-      dispatch(addMember(member));
+    try {
+      const result = await dispatch(importMembersThunk({ mappedData })).unwrap();
 
-      if (row.feeAmount) {
-        const payment = buildPaymentRecord(member, paymentsList.length + idx);
-        dispatch(addPayment(payment));
-      }
+      // Refresh Redux lists from backend (backend is now source of truth)
+      dispatch(fetchMembersThunk());
+      dispatch(fetchPaymentsThunk());
 
-      successCount++;
-    });
+      const frontendFailed = validationResult.length - validRows.length;
+      dispatch(setImportSummary({
+        total:   validationResult.length,
+        success: result.imported,
+        failed:  frontendFailed + result.failed,
+      }));
 
-    const failedCount = validationResult.length - successCount;
-    dispatch(setImportSummary({
-      total:   validationResult.length,
-      success: successCount,
-      failed:  failedCount,
-    }));
-
-    messageApi.success(`Import completed — ${successCount} member${successCount !== 1 ? 's' : ''} added successfully!`);
-    goTo(3);
+      messageApi.success(
+        `Import completed — ${result.imported} member${result.imported !== 1 ? 's' : ''} added!`
+      );
+      goTo(3);
+    } catch (err) {
+      messageApi.error(typeof err === 'string' ? err : 'Import failed. Please try again.');
+    }
   };
 
   // ── Reset everything ─────────────────────────────────────────────────────────
@@ -161,9 +159,13 @@ const Import = () => {
               </Button>
               <Button
                 type="primary"
-                disabled={!hasValidRows}
+                disabled={!hasValidRows || importLoading}
+                loading={importLoading}
                 onClick={handleImport}
-                style={{ background: hasValidRows ? '#52c41a' : undefined, borderColor: hasValidRows ? '#52c41a' : undefined }}
+                style={{
+                  background:   hasValidRows && !importLoading ? '#52c41a' : undefined,
+                  borderColor:  hasValidRows && !importLoading ? '#52c41a' : undefined,
+                }}
               >
                 Import Data →
               </Button>

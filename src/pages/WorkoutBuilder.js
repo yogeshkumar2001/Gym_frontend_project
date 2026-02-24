@@ -21,9 +21,8 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { nanoid } from '@reduxjs/toolkit';
-import dayjs from 'dayjs';
 
-import { addTemplate, updateTemplate } from '../features/workouts/workoutsSlice';
+import { createWorkoutThunk, updateWorkoutThunk } from '../features/workouts/workoutsSlice';
 import { selectAllTemplates } from '../features/workouts/workoutsSelectors';
 import WorkoutDayCard from '../components/workouts/WorkoutDayCard';
 import { colors } from '../theme/theme';
@@ -88,6 +87,7 @@ const WorkoutBuilder = () => {
     existingTemplate ? { ...existingTemplate } : EMPTY_DRAFT()
   );
   const [nameError, setNameError] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Sync draft when navigating to an existing template
   useEffect(() => {
@@ -127,28 +127,28 @@ const WorkoutBuilder = () => {
     }));
 
   // ── Save ───────────────────────────────────────────────────────────────────
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!draft.name.trim()) {
       setNameError(true);
       messageApi.error('Template name is required.');
       return;
     }
 
-    if (isEdit) {
-      dispatch(updateTemplate(draft));
-      messageApi.success(`"${draft.name}" updated.`);
-    } else {
-      dispatch(
-        addTemplate({
-          ...draft,
-          id:        nanoid(),
-          createdAt: dayjs().toISOString(),
-        })
-      );
-      messageApi.success(`"${draft.name}" created.`);
+    setSaving(true);
+    try {
+      if (isEdit) {
+        await dispatch(updateWorkoutThunk({ id: draft.id, data: draft })).unwrap();
+        messageApi.success(`"${draft.name}" updated.`);
+      } else {
+        await dispatch(createWorkoutThunk(draft)).unwrap();
+        messageApi.success(`"${draft.name}" created.`);
+      }
+      setTimeout(() => navigate('/workouts'), 500);
+    } catch (err) {
+      messageApi.error(typeof err === 'string' ? err : 'Failed to save template.');
+    } finally {
+      setSaving(false);
     }
-
-    setTimeout(() => navigate('/workouts'), 500);
   };
 
   // ── Derived display values ─────────────────────────────────────────────────
@@ -201,6 +201,7 @@ const WorkoutBuilder = () => {
               type="primary"
               icon={<SaveOutlined />}
               onClick={handleSave}
+              loading={saving}
             >
               {isEdit ? 'Save Changes' : 'Save Template'}
             </Button>

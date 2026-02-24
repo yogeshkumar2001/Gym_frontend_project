@@ -1,4 +1,19 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { importMembersFromCsv } from '../../services/api';
+
+// ─── Thunk ────────────────────────────────────────────────────────────────────
+
+export const importMembersThunk = createAsyncThunk(
+  'import/importMembers',
+  async ({ mappedData }, { rejectWithValue }) => {
+    try {
+      const result = await importMembersFromCsv({ mappedData });
+      return result.data; // { imported, failed, members, payments, errors }
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message ?? 'Import failed');
+    }
+  }
+);
 
 // ─── Mock CSV headers (simulates what would be parsed from a real file) ────────
 export const MOCK_CSV_HEADERS = ['Name', 'Mobile', 'PlanType', 'StartDate', 'Amount', 'Email'];
@@ -28,7 +43,7 @@ export const DEFAULT_COLUMN_MAPPING = {
   phone:       'Mobile',
   email:       'Email',
   plan:        'PlanType',
-  joiningDate: 'StartDate',
+  joinDate:    'StartDate',
   expiryDate:  '',
   feeAmount:   'Amount',
   status:      '',
@@ -40,7 +55,7 @@ export const SYSTEM_FIELDS = [
   { key: 'phone',       label: 'Phone',        required: true  },
   { key: 'email',       label: 'Email',        required: false },
   { key: 'plan',        label: 'Plan',         required: false },
-  { key: 'joiningDate', label: 'Joining Date', required: false },
+  { key: 'joinDate',    label: 'Joining Date', required: false },
   { key: 'expiryDate',  label: 'Expiry Date',  required: false },
   { key: 'feeAmount',   label: 'Fee Amount',   required: false },
   { key: 'status',      label: 'Status',       required: false },
@@ -67,6 +82,7 @@ const importSlice = createSlice({
   name: 'import',
   initialState,
   reducers: {
+    // (sync actions below)
     setFileName:         (state, action) => { state.fileName = action.payload; },
     setParsedData:       (state, action) => { state.parsedData = action.payload; },
     setColumnMapping:    (state, action) => { state.columnMapping = action.payload; },
@@ -75,7 +91,13 @@ const importSlice = createSlice({
     setImportSummary:    (state, action) => { state.importSummary = action.payload; },
     setLoading:          (state, action) => { state.loading = action.payload; },
     setCurrentStep:      (state, action) => { state.currentStep = action.payload; },
-    resetImport:         ()              => initialState,
+    resetImport: () => initialState,
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(importMembersThunk.pending,   (state) => { state.loading = true; })
+      .addCase(importMembersThunk.fulfilled, (state) => { state.loading = false; })
+      .addCase(importMembersThunk.rejected,  (state) => { state.loading = false; });
   },
 });
 

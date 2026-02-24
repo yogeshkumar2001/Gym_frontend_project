@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Row,
   Col,
@@ -30,7 +30,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import dayjs from 'dayjs';
 
 import { selectWorkoutTemplateStats, selectAllTemplates } from '../features/workouts/workoutsSelectors';
-import { deleteTemplate } from '../features/workouts/workoutsSlice';
+import { fetchWorkoutsThunk, deleteWorkoutThunk } from '../features/workouts/workoutsSlice';
 import { colors } from '../theme/theme';
 
 const { Title, Text } = Typography;
@@ -67,6 +67,8 @@ const Workouts = () => {
   const stats     = useSelector(selectWorkoutTemplateStats);
   const templates = useSelector(selectAllTemplates);
 
+  useEffect(() => { dispatch(fetchWorkoutsThunk()); }, [dispatch]);
+
   // ── Client-side search ────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -79,9 +81,13 @@ const Workouts = () => {
   }, [templates, search]);
 
   // ── Delete handler ────────────────────────────────────────────────────────
-  const handleDelete = (template) => {
-    dispatch(deleteTemplate(template.id));
-    messageApi.success(`"${template.name}" deleted.`);
+  const handleDelete = async (template) => {
+    try {
+      await dispatch(deleteWorkoutThunk(template.id)).unwrap();
+      messageApi.success(`"${template.name}" deleted.`);
+    } catch {
+      messageApi.error('Failed to delete template.');
+    }
   };
 
   // ── Summary cards ─────────────────────────────────────────────────────────

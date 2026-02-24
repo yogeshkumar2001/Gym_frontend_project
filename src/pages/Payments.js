@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Typography,
   Button,
@@ -8,6 +8,8 @@ import {
   Col,
   Statistic,
   Card,
+  message,
+  Alert,
 } from 'antd';
 import {
   PlusOutlined,
@@ -18,7 +20,7 @@ import {
   CalendarOutlined,
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { addPayment, deletePayment } from '../features/payments/paymentsSlice';
+import { fetchPaymentsThunk, createPaymentThunk, deletePaymentThunk } from '../features/payments/paymentsSlice';
 import { updateMember } from '../features/members/membersSlice';
 import {
   selectFilteredPayments,
@@ -119,13 +121,17 @@ const Payments = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [viewPayment, setViewPayment] = useState(null);
 
+  const [messageApi, contextHolder] = message.useMessage();
   const filteredPayments = useSelector(selectFilteredPayments);
-  const loading = useSelector(selectPaymentsLoading);
+  const loading          = useSelector(selectPaymentsLoading);
+  const fetchError       = useSelector((s) => s.payments.error);
   const members = useSelector((state) => state.members.list);
+
+  useEffect(() => { dispatch(fetchPaymentsThunk()); }, [dispatch]);
 
   // ── Record Payment ─────────────────────────────────────────────────────────
   const handleFormSubmit = useCallback(
-    (values) => {
+    async (values) => {
       const member = members.find((m) => m.id === values.memberId);
       if (!member) return;
 
@@ -138,51 +144,52 @@ const Payments = () => {
         .startOf('day')
         .toISOString();
 
-      // ── 1. Record the payment ──────────────────────────────────────────────
-      // Future: POST /payments  { memberId, amount, paymentDate, status, method }
-      dispatch(
-        addPayment({
-          id: Date.now(),
-          memberId: member.id,
-          memberName: member.name,
-          planId: member.planId,
-          planName: member.planName,
-          amount: values.amount,
-          paymentDate,
-          status: values.status,
-          method: values.method,
-          nextDueDate,
-        })
-      );
+      try {
+        // ── 1. Record the payment ────────────────────────────────────────────
+        await dispatch(
+          createPaymentThunk({
+            memberId: member.id,
+            memberName: member.name,
+            planId: member.planId,
+            planName: member.planName,
+            amount: values.amount,
+            paymentDate,
+            status: values.status,
+            method: values.method,
+            nextDueDate,
+          })
+        ).unwrap();
 
-      // ── 2. Update member state based on payment status ─────────────────────
-      if (values.status === 'paid') {
-        // Full payment: extend expiry and reactivate member
-        const newExpiryDate = values.paymentDate
-          .add(plan.months, 'month')
-          .toISOString();
-        dispatch(
-          updateMember({
-            ...member,
-            lastPaymentDate: paymentDate,
-            expiryDate: newExpiryDate,
-            status: 'active',
-          })
-        );
-      } else if (values.status === 'partial') {
-        // Partial: update lastPaymentDate only
-        dispatch(
-          updateMember({
-            ...member,
-            lastPaymentDate: paymentDate,
-          })
-        );
+        // ── 2. Update member state based on payment status (local) ───────────
+        if (values.status === 'paid') {
+          const newExpiryDate = values.paymentDate
+            .add(plan.months, 'month')
+            .toISOString();
+          dispatch(
+            updateMember({
+              ...member,
+              lastPaymentDate: paymentDate,
+              expiryDate: newExpiryDate,
+              status: 'active',
+            })
+          );
+        } else if (values.status === 'partial') {
+          dispatch(
+            updateMember({
+              ...member,
+              lastPaymentDate: paymentDate,
+            })
+          );
+        }
+
+        messageApi.success('Payment recorded.');
+        setModalOpen(false);
+        form.resetFields();
+      } catch (err) {
+        messageApi.error(typeof err === 'string' ? err : 'Failed to record payment.');
       }
-
-      setModalOpen(false);
-      form.resetFields();
     },
-    [dispatch, members, form]
+    [dispatch, members, form, messageApi]
   );
 
   // ── Delete with confirmation ────────────────────────────────────────────────
@@ -196,10 +203,17 @@ const Payments = () => {
         okText: 'Delete',
         okType: 'danger',
         cancelText: 'Cancel',
-        onOk: () => dispatch(deletePayment(id)),
+        onOk: async () => {
+          try {
+            await dispatch(deletePaymentThunk(id)).unwrap();
+            messageApi.success('Payment deleted.');
+          } catch {
+            messageApi.error('Failed to delete payment.');
+          }
+        },
       });
     },
-    [dispatch]
+    [dispatch, messageApi]
   );
 
   // ── View ───────────────────────────────────────────────────────────────────
@@ -213,6 +227,7 @@ const Payments = () => {
 
   return (
     <div>
+      {contextHolder}
       {/* Page Header */}
       <div
         style={{
@@ -233,6 +248,17 @@ const Payments = () => {
           Record Payment
         </Button>
       </div>
+
+      {/* API error banner */}
+      {fetchError && (
+        <Alert
+          type="error"
+          message="Failed to load payments"
+          description={fetchError}
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
 
       {/* Revenue Stats */}
       <PaymentStats />

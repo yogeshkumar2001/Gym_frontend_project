@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Row,
   Col,
@@ -14,6 +14,7 @@ import {
   Divider,
   Tooltip,
   message,
+  Alert,
 } from 'antd';
 import {
   FileTextOutlined,
@@ -27,10 +28,9 @@ import {
   TeamOutlined,
 } from '@ant-design/icons';
 import { useSelector, useDispatch } from 'react-redux';
-import { nanoid } from '@reduxjs/toolkit';
 
 import { selectPlanStats } from '../features/plans/plansSelectors';
-import { addPlan, updatePlan, deletePlan } from '../features/plans/plansSlice';
+import { fetchPlansThunk, createPlanThunk, updatePlanThunk, deletePlanThunk } from '../features/plans/plansSlice';
 import PlanForm from '../components/plans/PlanForm';
 import { colors } from '../theme/theme';
 
@@ -69,6 +69,9 @@ const Plans = () => {
 
   // ── Selectors ────────────────────────────────────────────────────────────
   const { plans, summary } = useSelector(selectPlanStats);
+  const fetchError         = useSelector((s) => s.plans.error);
+
+  useEffect(() => { dispatch(fetchPlansThunk()); }, [dispatch]);
 
   // ── Filtered plans (client-side search) ──────────────────────────────────
   const filteredPlans = useMemo(() => {
@@ -92,27 +95,32 @@ const Plans = () => {
     setFormOpen(true);
   };
 
-  const handleFormSubmit = (values) => {
+  const handleFormSubmit = async (values) => {
     setConfirmLoading(true);
-
-    // Simulate async (replace with api call when backend is ready)
-    setTimeout(() => {
+    try {
       if (editingPlan) {
-        dispatch(updatePlan({ ...editingPlan, ...values }));
+        await dispatch(updatePlanThunk({ id: editingPlan.id, data: { ...editingPlan, ...values } })).unwrap();
         messageApi.success(`Plan "${values.name}" updated.`);
       } else {
-        dispatch(addPlan({ id: nanoid(), ...values }));
+        await dispatch(createPlanThunk(values)).unwrap();
         messageApi.success(`Plan "${values.name}" created.`);
       }
-      setConfirmLoading(false);
       setFormOpen(false);
       setEditingPlan(null);
-    }, 400);
+    } catch (err) {
+      messageApi.error(typeof err === 'string' ? err : 'Operation failed.');
+    } finally {
+      setConfirmLoading(false);
+    }
   };
 
-  const handleDelete = (plan) => {
-    dispatch(deletePlan(plan.id));
-    messageApi.success(`Plan "${plan.name}" deleted.`);
+  const handleDelete = async (plan) => {
+    try {
+      await dispatch(deletePlanThunk(plan.id)).unwrap();
+      messageApi.success(`Plan "${plan.name}" deleted.`);
+    } catch (err) {
+      messageApi.error(typeof err === 'string' ? err : 'Failed to delete plan.');
+    }
   };
 
   const handleCancel = () => {
@@ -296,6 +304,17 @@ const Plans = () => {
           </Button>
         </Col>
       </Row>
+
+      {/* API error banner */}
+      {fetchError && (
+        <Alert
+          type="error"
+          message="Failed to load plans"
+          description={fetchError}
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
 
       {/* ── Summary cards ────────────────────────────────────────────────── */}
       <SectionDivider label="Overview" />

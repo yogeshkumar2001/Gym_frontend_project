@@ -17,9 +17,8 @@ import { PlusOutlined, SaveOutlined, FireOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { nanoid } from '@reduxjs/toolkit';
-import dayjs from 'dayjs';
 
-import { addTemplate, updateTemplate } from '../features/diets/dietsSlice';
+import { createDietThunk, updateDietThunk } from '../features/diets/dietsSlice';
 import { selectAllDietTemplates } from '../features/diets/dietsSelectors';
 import DietDayCard from '../components/diets/DietDayCard';
 import { colors } from '../theme/theme';
@@ -85,6 +84,7 @@ const DietBuilder = () => {
     existingTemplate ? { ...existingTemplate } : EMPTY_DRAFT()
   );
   const [nameError, setNameError] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Sync draft if navigating directly to an existing template
   useEffect(() => {
@@ -124,28 +124,28 @@ const DietBuilder = () => {
     }));
 
   // ── Save ───────────────────────────────────────────────────────────────────
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!draft.name.trim()) {
       setNameError(true);
       messageApi.error('Template name is required.');
       return;
     }
 
-    if (isEdit) {
-      dispatch(updateTemplate(draft));
-      messageApi.success(`"${draft.name}" updated.`);
-    } else {
-      dispatch(
-        addTemplate({
-          ...draft,
-          id:        nanoid(),
-          createdAt: dayjs().toISOString(),
-        })
-      );
-      messageApi.success(`"${draft.name}" created.`);
+    setSaving(true);
+    try {
+      if (isEdit) {
+        await dispatch(updateDietThunk({ id: draft.id, data: draft })).unwrap();
+        messageApi.success(`"${draft.name}" updated.`);
+      } else {
+        await dispatch(createDietThunk(draft)).unwrap();
+        messageApi.success(`"${draft.name}" created.`);
+      }
+      setTimeout(() => navigate('/diets'), 500);
+    } catch (err) {
+      messageApi.error(typeof err === 'string' ? err : 'Failed to save template.');
+    } finally {
+      setSaving(false);
     }
-
-    setTimeout(() => navigate('/diets'), 500);
   };
 
   // ── Derived summary values (display only) ─────────────────────────────────
@@ -205,6 +205,7 @@ const DietBuilder = () => {
               type="primary"
               icon={<SaveOutlined />}
               onClick={handleSave}
+              loading={saving}
             >
               {isEdit ? 'Save Changes' : 'Save Template'}
             </Button>

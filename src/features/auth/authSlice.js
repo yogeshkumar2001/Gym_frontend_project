@@ -1,15 +1,32 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { login as loginApi, register as registerApi } from '../../services/api';
+import { login as loginApi, register as registerApi, getMe } from '../../services/api';
 
 // ─── Thunks ───────────────────────────────────────────────────────────────────
+
+export const restoreSessionThunk = createAsyncThunk(
+  'auth/restoreSession',
+  async (_, { rejectWithValue }) => {
+    const token = localStorage.getItem('gym_token');
+    if (!token) return rejectWithValue('no token');
+    try {
+      const result = await getMe();
+      return result.data; // user object
+    } catch {
+      localStorage.removeItem('gym_token');
+      return rejectWithValue('session expired');
+    }
+  }
+);
 
 export const loginThunk = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
     try {
+      // Axios interceptor unwraps response.data, so result is already
+      // { success, token, user } — NOT nested under result.data
       const result = await loginApi(credentials);
-      localStorage.setItem('gym_token', result.data.token);
-      return result.data.user;
+      localStorage.setItem('gym_token', result.token);
+      return result.user;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message ?? 'Login failed');
     }
@@ -21,8 +38,8 @@ export const registerThunk = createAsyncThunk(
   async (data, { rejectWithValue }) => {
     try {
       const result = await registerApi(data);
-      localStorage.setItem('gym_token', result.data.token);
-      return result.data.user;
+      localStorage.setItem('gym_token', result.token);
+      return result.user;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message ?? 'Registration failed');
     }
@@ -34,6 +51,7 @@ export const registerThunk = createAsyncThunk(
 const initialState = {
   user: null,
   isAuthenticated: false,
+  isRestoring: true,  // true until first session-restore attempt completes
   loading: false,
   error: null,
 };
@@ -49,11 +67,22 @@ const authSlice = createSlice({
 
     logout: () => {
       localStorage.removeItem('gym_token');
-      return initialState;
+      return { ...initialState, isRestoring: false }; // logout is complete — no restore needed
     },
   },
   extraReducers: (builder) => {
     builder
+      // restoreSession — clears isRestoring flag once we know the auth state
+      .addCase(restoreSessionThunk.fulfilled, (state, action) => {
+        state.isRestoring = false;
+        state.isAuthenticated = true;
+        state.user = action.payload;
+      })
+      .addCase(restoreSessionThunk.rejected, (state) => {
+        state.isRestoring = false;
+        state.isAuthenticated = false;
+      })
+
       .addCase(loginThunk.pending,    (state)         => { state.loading = true;  state.error = null; })
       .addCase(loginThunk.fulfilled,  (state, action) => { state.loading = false; state.isAuthenticated = true; state.user = action.payload; })
       .addCase(loginThunk.rejected,   (state, action) => { state.loading = false; state.error = action.payload; })

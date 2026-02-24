@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Row,
   Col,
@@ -34,7 +34,7 @@ import {
   selectDietTemplateStats,
   selectAllDietTemplates,
 } from '../features/diets/dietsSelectors';
-import { deleteTemplate } from '../features/diets/dietsSlice';
+import { fetchDietsThunk, deleteDietThunk } from '../features/diets/dietsSlice';
 import { colors } from '../theme/theme';
 
 const { Title, Text } = Typography;
@@ -74,6 +74,8 @@ const Diets = () => {
   const stats     = useSelector(selectDietTemplateStats);
   const templates = useSelector(selectAllDietTemplates);
 
+  useEffect(() => { dispatch(fetchDietsThunk()); }, [dispatch]);
+
   // ── Client-side search ────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -86,9 +88,13 @@ const Diets = () => {
   }, [templates, search]);
 
   // ── Delete handler ────────────────────────────────────────────────────────
-  const handleDelete = (template) => {
-    dispatch(deleteTemplate(template.id));
-    messageApi.success(`"${template.name}" deleted.`);
+  const handleDelete = async (template) => {
+    try {
+      await dispatch(deleteDietThunk(template.id)).unwrap();
+      messageApi.success(`"${template.name}" deleted.`);
+    } catch {
+      messageApi.error('Failed to delete template.');
+    }
   };
 
   // ── Summary cards ─────────────────────────────────────────────────────────
