@@ -2,20 +2,16 @@ import axios from 'axios';
 
 // ─── Axios Instance ───────────────────────────────────────────────────────────
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8000/api',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api/v1',
   timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
 });
 
 // ─── Request Interceptor ──────────────────────────────────────────────────────
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('gym_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
   (error) => Promise.reject(error)
@@ -34,80 +30,114 @@ api.interceptors.response.use(
 );
 
 // ─── Filter → Query Params Builder ───────────────────────────────────────────
-// Usage: api.get('/members', { params: buildQueryParams(filters) })
+// Converts filterSlice shape → query string params for list endpoints.
 export const buildQueryParams = (filters = {}) => {
   const params = {};
-
-  if (filters.startDate) params.startDate = filters.startDate;
-  if (filters.endDate) params.endDate = filters.endDate;
+  if (filters.startDate)                params.startDate = filters.startDate;
+  if (filters.endDate)                  params.endDate   = filters.endDate;
   if (filters.status && filters.status !== 'all') params.status = filters.status;
-  if (filters.plan && filters.plan !== 'all') params.planId = filters.plan;
-  if (filters.search?.trim()) params.search = filters.search.trim();
-
+  if (filters.plan   && filters.plan   !== 'all') params.planId = filters.plan;
+  if (filters.search?.trim())           params.search    = filters.search.trim();
   return params;
 };
 
-// ─── Notifications API (future backend endpoints) ─────────────────────────────
-// POST /notifications/send  →  { success: true, channel, memberId }
-export const sendNotification = ({ memberId, type, channel = 'sms' }) =>
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+// POST /auth/login    → { success, data: { token, user } }
+// POST /auth/register → { success, data: { token, user } }
+// GET  /auth/me       → { success, data: user }
+export const login    = (credentials) => api.post('/auth/login', credentials);
+export const register = (data)        => api.post('/auth/register', data);
+export const getMe    = ()            => api.get('/auth/me');
+
+// ─── Members ──────────────────────────────────────────────────────────────────
+// GET    /members              → { success, rows, count, page, limit }
+// GET    /members/:id          → { success, data } — includes plan + assignments
+// POST   /members              → { success, data }
+// PUT    /members/:id          → { success, data }
+// DELETE /members/:id          → { success, message }
+export const fetchMembers    = (filters = {}) => api.get('/members', { params: buildQueryParams(filters) });
+export const fetchMemberById = (id)           => api.get(`/members/${id}`);
+export const createMember    = (data)         => api.post('/members', data);
+export const updateMember    = (id, data)     => api.put(`/members/${id}`, data);
+export const deleteMember    = (id)           => api.delete(`/members/${id}`);
+
+// ─── Plans ────────────────────────────────────────────────────────────────────
+// GET    /plans        → { success, rows, count, page, limit }
+// GET    /plans/:id    → { success, data }
+// POST   /plans        → { success, data }
+// PUT    /plans/:id    → { success, data }
+// DELETE /plans/:id    → { success, message }  (409 if members are on this plan)
+export const fetchPlans    = (params = {}) => api.get('/plans', { params });
+export const fetchPlanById = (id)          => api.get(`/plans/${id}`);
+export const createPlan    = (data)        => api.post('/plans', data);
+export const patchPlan     = (id, data)    => api.put(`/plans/${id}`, data);
+export const removePlan    = (id)          => api.delete(`/plans/${id}`);
+
+// ─── Payments ─────────────────────────────────────────────────────────────────
+// GET    /payments        → { success, rows, count, page, limit } — includes member + plan
+// GET    /payments/:id    → { success, data } — includes member + plan
+// POST   /payments        → { success, data } — invoiceNumber auto-generated
+// PUT    /payments/:id    → { success, data }
+// DELETE /payments/:id    → { success, message }
+export const fetchPayments    = (filters = {}) => api.get('/payments', { params: buildQueryParams(filters) });
+export const fetchPaymentById = (id)           => api.get(`/payments/${id}`);
+export const createPayment    = (data)         => api.post('/payments', data);
+export const updatePayment    = (id, data)     => api.put(`/payments/${id}`, data);
+export const deletePayment    = (id)           => api.delete(`/payments/${id}`);
+
+// ─── Workouts ─────────────────────────────────────────────────────────────────
+// GET    /workouts        → { success, rows, count, page, limit }
+// GET    /workouts/:id    → { success, data }
+// POST   /workouts        → { success, data }  — createdBy set from JWT
+// PUT    /workouts/:id    → { success, data }
+// DELETE /workouts/:id    → { success, message }
+export const fetchWorkoutTemplates    = (params = {}) => api.get('/workouts', { params });
+export const fetchWorkoutTemplateById = (id)          => api.get(`/workouts/${id}`);
+export const createWorkoutTemplate    = (data)        => api.post('/workouts', data);
+export const updateWorkoutTemplate    = (id, data)    => api.put(`/workouts/${id}`, data);
+export const removeWorkoutTemplate    = (id)          => api.delete(`/workouts/${id}`);
+
+// ─── Diets ────────────────────────────────────────────────────────────────────
+// GET    /diets        → { success, rows, count, page, limit }
+// GET    /diets/:id    → { success, data }
+// POST   /diets        → { success, data }  — createdBy set from JWT
+// PUT    /diets/:id    → { success, data }
+// DELETE /diets/:id    → { success, message }
+export const fetchDietTemplates    = (params = {}) => api.get('/diets', { params });
+export const fetchDietTemplateById = (id)          => api.get(`/diets/${id}`);
+export const createDietTemplate    = (data)        => api.post('/diets', data);
+export const updateDietTemplate    = (id, data)    => api.put(`/diets/${id}`, data);
+export const removeDietTemplate    = (id)          => api.delete(`/diets/${id}`);
+
+// ─── Assignments ──────────────────────────────────────────────────────────────
+// Assignments are embedded in GET /members/:id — fetchMemberById is the primary way
+// to load a member profile with full workout + diet history.
+//
+// POST /assignments/workout              → { success, data } — active→completed + new active
+// POST /assignments/diet                 → { success, data }
+// PUT  /assignments/workout/:id/complete → { success, message }
+// PUT  /assignments/diet/:id/complete    → { success, message }
+export const fetchMemberAssignments = (memberId)        => api.get(`/members/${memberId}`);
+export const assignMemberWorkout    = (memberId, data)  => api.post('/assignments/workout', { memberId, ...data });
+export const assignMemberDiet       = (memberId, data)  => api.post('/assignments/diet',    { memberId, ...data });
+export const completeWorkoutAssignment = (assignmentId) => api.put(`/assignments/workout/${assignmentId}/complete`);
+export const completeDietAssignment    = (assignmentId) => api.put(`/assignments/diet/${assignmentId}/complete`);
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+// GET  /notifications/expiry-reminders?days=N   → { success, data: [...members with daysRemaining] }
+// GET  /notifications/payment-reminders?days=N  → { success, data: [...payments with daysOverdue] }
+// POST /notifications/send                       → { success, result: { sent, memberId, type, channel } }
+export const fetchExpiryReminders  = (days = 7) => api.get('/notifications/expiry-reminders',  { params: { days } });
+export const fetchPaymentReminders = (days = 7) => api.get('/notifications/payment-reminders', { params: { days } });
+export const sendNotification = ({ memberId, type, channel = 'email' }) =>
   api.post('/notifications/send', { memberId, type, channel });
 
-// GET /notifications/candidates?startDate=...&endDate=...&reminderDays=...
-export const fetchNotificationCandidates = (params) =>
-  api.get('/notifications/candidates', { params: buildQueryParams(params) });
+// ─── Analytics ────────────────────────────────────────────────────────────────
+// GET /analytics?metric=revenue&dimension=month&startDate=...&endDate=...
+// → { success, data, total, dataPoints, max, isCurrency, isAttendanceStub }
+export const fetchAnalyticsData = (params) => api.get('/analytics', { params });
 
-// ─── Analytics API (future backend endpoint) ──────────────────────────────────
-// Usage: fetchAnalyticsData({ metric, dimension, startDate, endDate, plan, status })
-//   GET /analytics/data?metric=revenue&dimension=month&...
-//   → { data: [{ name, value }, ...], total, dataPoints, max }
-export const fetchAnalyticsData = (params) =>
-  api.get('/analytics/data', { params: buildQueryParams(params) });
-
-// ─── Assignment API (future backend endpoints) ────────────────────────────────
-// POST /members/:id/workout-assignment  →  { assignment }
-// POST /members/:id/diet-assignment     →  { assignment }
-// GET  /members/:id/assignments         →  { workoutAssignments, dietAssignments }
-export const fetchMemberAssignments   = (memberId)       => api.get(`/members/${memberId}/assignments`);
-export const assignMemberWorkout      = (memberId, data) => api.post(`/members/${memberId}/workout-assignment`, data);
-export const assignMemberDiet         = (memberId, data) => api.post(`/members/${memberId}/diet-assignment`, data);
-
-// ─── Diets API (future backend endpoints) ────────────────────────────────────
-// GET /diets/templates          → [DietTemplate]
-// GET /diets/templates/:id      → DietTemplate
-// POST /diets/templates         → created template
-// PUT /diets/templates/:id      → updated template
-// DELETE /diets/templates/:id   → { success: true }
-export const fetchDietTemplates    = ()           => api.get('/diets/templates');
-export const fetchDietTemplateById = (id)         => api.get(`/diets/templates/${id}`);
-export const createDietTemplate    = (data)       => api.post('/diets/templates', data);
-export const updateDietTemplate    = (id, data)   => api.put(`/diets/templates/${id}`, data);
-export const removeDietTemplate    = (id)         => api.delete(`/diets/templates/${id}`);
-
-// ─── Workouts API (future backend endpoints) ─────────────────────────────────
-// GET /workouts/templates          → [WorkoutTemplate]
-// GET /workouts/templates/:id      → WorkoutTemplate
-// POST /workouts/templates         → created template
-// PUT /workouts/templates/:id      → updated template
-// DELETE /workouts/templates/:id   → { success: true }
-export const fetchWorkoutTemplates    = ()           => api.get('/workouts/templates');
-export const fetchWorkoutTemplateById = (id)         => api.get(`/workouts/templates/${id}`);
-export const createWorkoutTemplate    = (data)       => api.post('/workouts/templates', data);
-export const updateWorkoutTemplate    = (id, data)   => api.put(`/workouts/templates/${id}`, data);
-export const removeWorkoutTemplate    = (id)         => api.delete(`/workouts/templates/${id}`);
-
-// ─── Plans API (future backend endpoints) ────────────────────────────────────
-// GET /plans                → [{ id, name, description, durationMonths, price, status }]
-// POST /plans               → created plan
-// PUT /plans/:id            → updated plan
-// DELETE /plans/:id         → { success: true }
-export const fetchPlans   = ()           => api.get('/plans');
-export const createPlan   = (data)       => api.post('/plans', data);
-export const patchPlan    = (id, data)   => api.put(`/plans/${id}`, data);
-export const removePlan   = (id)         => api.delete(`/plans/${id}`);
-
-// ─── CSV Import API (future backend endpoint) ─────────────────────────────────
-// Usage: importMembersFromCsv({ mappedData, options })
-//   POST /import/members  →  { success: number, failed: number, errors: [] }
+// ─── CSV Import (frontend-only — no backend endpoint yet) ────────────────────
 export const importMembersFromCsv = ({ mappedData, options = {} }) =>
   api.post('/import/members', { mappedData, options });
 
