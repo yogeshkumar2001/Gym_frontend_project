@@ -14,7 +14,9 @@ import {
   ClockCircleOutlined,
   ExclamationCircleOutlined,
   PlusOutlined,
+  FileDoneOutlined,
 } from '@ant-design/icons';
+import EmptyState from '../components/common/EmptyState';
 import { useDispatch, useSelector } from 'react-redux';
 import dayjs from 'dayjs';
 
@@ -89,6 +91,7 @@ const Invoices = () => {
   const filteredInvoices = useSelector(selectFilteredInvoices);
   // Need the full list (with status) to look up a single invoice for preview
   const allInvoices = useSelector(selectInvoicesWithStatus);
+  const totalInvoices = useSelector((s) => s.billing.list.length);
 
   const [generateOpen, setGenerateOpen] = useState(false);
   const [previewInvoice, setPreviewInvoice] = useState(null);
@@ -194,25 +197,38 @@ const Invoices = () => {
         </button>
       </div>
 
-      {/* Summary stat cards */}
-      <InvoiceStats />
-
-      {/* Global Filters — invoice-specific status options, no plan filter needed */}
-      <GlobalFilters
-        statusOptions={INVOICE_FILTER_STATUS_OPTIONS}
-        searchPlaceholder="Search member name or invoice number..."
-        showPlanFilter={false}
-      />
-
-      {/* Invoices table */}
-      <Card bodyStyle={{ padding: 0 }} style={{ marginTop: 16 }}>
-        <InvoicesTable
-          data={filteredInvoices}
-          onView={handleView}
-          onDownload={handleDownload}
-          onDelete={handleDelete}
+      {/* ── Empty state — no invoices yet ─────────────────────────────────── */}
+      {totalInvoices === 0 ? (
+        <EmptyState
+          icon={<FileDoneOutlined />}
+          title="No invoices generated yet"
+          description="Invoices are created when you record payments."
+          primaryActionLabel="Record Payment"
+          primaryActionLink="/payments"
         />
-      </Card>
+      ) : (
+        <>
+          {/* Summary stat cards */}
+          <InvoiceStats />
+
+          {/* Global Filters */}
+          <GlobalFilters
+            statusOptions={INVOICE_FILTER_STATUS_OPTIONS}
+            searchPlaceholder="Search member name or invoice number..."
+            showPlanFilter={false}
+          />
+
+          {/* Invoices table */}
+          <Card bodyStyle={{ padding: 0 }} style={{ marginTop: 16 }}>
+            <InvoicesTable
+              data={filteredInvoices}
+              onView={handleView}
+              onDownload={handleDownload}
+              onDelete={handleDelete}
+            />
+          </Card>
+        </>
+      )}
 
       {/* Generate Invoice Modal */}
       <InvoiceModal

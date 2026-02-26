@@ -31,6 +31,7 @@ import dayjs from 'dayjs';
 
 import { selectWorkoutTemplateStats, selectAllTemplates } from '../features/workouts/workoutsSelectors';
 import { fetchWorkoutsThunk, deleteWorkoutThunk } from '../features/workouts/workoutsSlice';
+import EmptyState from '../components/common/EmptyState';
 import { colors } from '../theme/theme';
 
 const { Title, Text } = Typography;
@@ -169,11 +170,10 @@ const Workouts = () => {
         { text: 'Advanced',     value: 'advanced'      },
       ],
       onFilter:  (value, record) => record.difficulty === value,
-      render:    (diff) => (
-        <Tag color={DIFFICULTY_COLOR[diff] ?? 'default'}>
-          {diff.charAt(0).toUpperCase() + diff.slice(1)}
-        </Tag>
-      ),
+      render:    (diff) => {
+        const label = diff ? diff.charAt(0).toUpperCase() + diff.slice(1) : '—';
+        return <Tag color={DIFFICULTY_COLOR[diff] ?? 'default'}>{label}</Tag>;
+      },
     },
     {
       title:     'Created',
@@ -193,11 +193,10 @@ const Workouts = () => {
         { text: 'Draft',  value: 'draft'  },
       ],
       onFilter:  (value, record) => record.status === value,
-      render:    (status) => (
-        <Tag color={STATUS_COLOR[status] ?? 'default'}>
-          {status.charAt(0).toUpperCase() + status.slice(1)}
-        </Tag>
-      ),
+      render:    (status) => {
+        const label = status ? status.charAt(0).toUpperCase() + status.slice(1) : '—';
+        return <Tag color={STATUS_COLOR[status] ?? 'default'}>{label}</Tag>;
+      },
     },
     {
       title:  'Actions',
@@ -266,25 +265,13 @@ const Workouts = () => {
 
       {/* ── Empty state ───────────────────────────────────────────────────── */}
       {templates.length === 0 ? (
-        <Card style={{ textAlign: 'center', padding: '48px 24px', marginTop: 8 }}>
-          <ThunderboltOutlined
-            style={{
-              fontSize: 48,
-              color: '#d9d9d9',
-              display: 'block',
-              marginBottom: 16,
-            }}
-          />
-          <div style={{ marginBottom: 8 }}>
-            <strong style={{ fontSize: 16 }}>No workout templates yet</strong>
-          </div>
-          <div style={{ color: '#8c8c8c', marginBottom: 24, fontSize: 14 }}>
-            Build reusable workout programs to assign to your members.
-          </div>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/workouts/new')}>
-            Create First Template
-          </Button>
-        </Card>
+        <EmptyState
+          icon={<ThunderboltOutlined />}
+          title="No workout templates yet"
+          description="Build reusable workout programs that can be assigned to any member."
+          primaryActionLabel="Create Template"
+          primaryActionLink="/workouts/new"
+        />
       ) : (
         <>
           {/* ── Summary cards ──────────────────────────────────────────────── */}

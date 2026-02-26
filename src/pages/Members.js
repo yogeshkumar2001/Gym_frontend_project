@@ -1,12 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Typography, Button, Form, Modal, Row, Col, Statistic, Card, message, Alert, Space } from 'antd';
+import { Typography, Button, Form, Modal, Row, Col, Statistic, Card, message, Alert } from 'antd';
 import {
   PlusOutlined,
   TeamOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   ExclamationCircleOutlined,
-  UploadOutlined,
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +26,7 @@ import { FORM_PLAN_OPTIONS } from '../constants/memberConstants';
 import GlobalFilters from '../components/filters/GlobalFilters';
 import MembersTable from '../components/members/MembersTable';
 import MemberModal from '../components/members/MemberModal';
+import EmptyState from '../components/common/EmptyState';
 import { colors } from '../theme/theme';
 
 const { Title } = Typography;
@@ -198,30 +198,15 @@ const Members = () => {
 
       {/* Empty state — shown when gym has no members yet */}
       {!loading && !fetchError && totalCount === 0 ? (
-        <Card style={{ textAlign: 'center', padding: '40px 24px', marginTop: 8 }}>
-          <TeamOutlined
-            style={{
-              fontSize: 48,
-              color: '#d9d9d9',
-              display: 'block',
-              marginBottom: 16,
-            }}
-          />
-          <div style={{ marginBottom: 8 }}>
-            <strong style={{ fontSize: 16 }}>No members yet</strong>
-          </div>
-          <div style={{ color: '#8c8c8c', marginBottom: 24, fontSize: 14 }}>
-            Add your first member manually or import a list from a CSV file.
-          </div>
-          <Space size={12}>
-            <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>
-              Add Member
-            </Button>
-            <Button icon={<UploadOutlined />} onClick={() => navigate('/upload')}>
-              Import CSV
-            </Button>
-          </Space>
-        </Card>
+        <EmptyState
+          icon={<TeamOutlined />}
+          title="No members yet"
+          description="Add your first member manually or import a list from a CSV file."
+          primaryActionLabel="Add Member"
+          onPrimaryAction={openAdd}
+          secondaryActionLabel="Import CSV"
+          secondaryActionLink="/upload"
+        />
       ) : (
         <>
           {/* Global Filters */}

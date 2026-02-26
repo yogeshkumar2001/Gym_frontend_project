@@ -1,10 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { seedInvoices } from '../../data/seedData';
 
 const billingSlice = createSlice({
   name: 'billing',
   initialState: {
-    list: seedInvoices,
+    list: [],
     loading: false,
     error: null,
   },

@@ -5,7 +5,6 @@ import {
   updateMember as updateMemberApi,
   deleteMember as deleteMemberApi,
 } from '../../services/api';
-import { seedMembers } from '../../data/seedData';
 
 // ─── Thunks ───────────────────────────────────────────────────────────────────
 
@@ -60,7 +59,7 @@ export const deleteMemberThunk = createAsyncThunk(
 // ─── Slice ────────────────────────────────────────────────────────────────────
 
 const initialState = {
-  list: [...seedMembers],
+  list: [],
   loading: false,
   error: null,
 };

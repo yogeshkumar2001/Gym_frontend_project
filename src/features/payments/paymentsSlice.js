@@ -5,7 +5,6 @@ import {
   updatePayment as updatePaymentApi,
   deletePayment as deletePaymentApi,
 } from '../../services/api';
-import { seedPayments } from '../../data/seedData';
 
 // ─── Thunks ───────────────────────────────────────────────────────────────────
 
@@ -60,7 +59,7 @@ export const deletePaymentThunk = createAsyncThunk(
 // ─── Slice ────────────────────────────────────────────────────────────────────
 
 const initialState = {
-  list: [...seedPayments],
+  list: [],
   loading: false,
   error: null,
 };

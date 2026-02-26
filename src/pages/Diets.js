@@ -35,6 +35,7 @@ import {
   selectAllDietTemplates,
 } from '../features/diets/dietsSelectors';
 import { fetchDietsThunk, deleteDietThunk } from '../features/diets/dietsSlice';
+import EmptyState from '../components/common/EmptyState';
 import { colors } from '../theme/theme';
 
 const { Title, Text } = Typography;
@@ -52,7 +53,7 @@ const STATUS_COLOR = {
   draft:  'default',
 };
 
-const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const capitalize = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '—');
 
 // ─── Section divider ──────────────────────────────────────────────────────────
 const SectionDivider = ({ label }) => (
@@ -270,25 +271,13 @@ const Diets = () => {
 
       {/* ── Empty state ───────────────────────────────────────────────────── */}
       {templates.length === 0 ? (
-        <Card style={{ textAlign: 'center', padding: '48px 24px', marginTop: 8 }}>
-          <FireOutlined
-            style={{
-              fontSize: 48,
-              color: '#d9d9d9',
-              display: 'block',
-              marginBottom: 16,
-            }}
-          />
-          <div style={{ marginBottom: 8 }}>
-            <strong style={{ fontSize: 16 }}>No diet templates yet</strong>
-          </div>
-          <div style={{ color: '#8c8c8c', marginBottom: 24, fontSize: 14 }}>
-            Build structured nutrition programs to assign to your members.
-          </div>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/diets/new')}>
-            Create First Template
-          </Button>
-        </Card>
+        <EmptyState
+          icon={<FireOutlined />}
+          title="No diet templates yet"
+          description="Build structured nutrition programs that can be assigned to any member."
+          primaryActionLabel="Create Template"
+          primaryActionLink="/diets/new"
+        />
       ) : (
         <>
           {/* ── Summary cards ──────────────────────────────────────────────── */}

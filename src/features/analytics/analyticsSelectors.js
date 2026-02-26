@@ -55,7 +55,7 @@ const getDimensionInfo = (dimension, source, row, memberMap) => {
           : row.status;
       return {
         key:   status,
-        label: status.charAt(0).toUpperCase() + status.slice(1),
+        label: status ? status.charAt(0).toUpperCase() + status.slice(1) : '—',
       };
     }
 

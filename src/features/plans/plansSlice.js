@@ -57,18 +57,10 @@ export const deletePlanThunk = createAsyncThunk(
   }
 );
 
-// ─── Seed Plans ───────────────────────────────────────────────────────────────
-// Used until fetchPlansThunk is dispatched on app load.
-const SEED_PLANS = [
-  { id: 'monthly',   name: 'Monthly',   description: 'Flexible month-to-month membership with no long-term commitment.', durationMonths: 1,  price: 49.99,  status: 'active' },
-  { id: 'quarterly', name: 'Quarterly', description: 'Three-month membership offering better value than monthly.',       durationMonths: 3,  price: 129.99, status: 'active' },
-  { id: 'annually',  name: 'Annually',  description: 'Full year membership at the best available rate.',                 durationMonths: 12, price: 449.99, status: 'active' },
-];
-
 // ─── Slice ────────────────────────────────────────────────────────────────────
 
 const initialState = {
-  list: SEED_PLANS,
+  list: [],
   loading: false,
   error: null,
 };

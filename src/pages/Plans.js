@@ -15,6 +15,7 @@ import {
   Tooltip,
   message,
   Alert,
+  Spin,
 } from 'antd';
 import {
   FileTextOutlined,
@@ -32,6 +33,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { selectPlanStats } from '../features/plans/plansSelectors';
 import { fetchPlansThunk, createPlanThunk, updatePlanThunk, deletePlanThunk } from '../features/plans/plansSlice';
 import PlanForm from '../components/plans/PlanForm';
+import EmptyState from '../components/common/EmptyState';
 import { colors } from '../theme/theme';
 
 const { Title, Text } = Typography;
@@ -70,6 +72,7 @@ const Plans = () => {
   // ── Selectors ────────────────────────────────────────────────────────────
   const { plans, summary } = useSelector(selectPlanStats);
   const fetchError         = useSelector((s) => s.plans.error);
+  const plansLoading       = useSelector((s) => s.plans.loading);
 
   useEffect(() => { dispatch(fetchPlansThunk()); }, [dispatch]);
 
@@ -232,11 +235,10 @@ const Plans = () => {
         { text: 'Inactive', value: 'inactive' },
       ],
       onFilter: (value, record) => record.status === value,
-      render: (status) => (
-        <Tag color={statusColor[status] ?? 'default'}>
-          {status.charAt(0).toUpperCase() + status.slice(1)}
-        </Tag>
-      ),
+      render: (status) => {
+        const label = status ? status.charAt(0).toUpperCase() + status.slice(1) : '—';
+        return <Tag color={statusColor[status] ?? 'default'}>{label}</Tag>;
+      },
     },
     {
       title: 'Actions',
@@ -316,28 +318,26 @@ const Plans = () => {
         />
       )}
 
-      {/* ── Empty state ──────────────────────────────────────────────────── */}
-      {!fetchError && plans.length === 0 ? (
-        <Card style={{ textAlign: 'center', padding: '48px 24px', marginTop: 8 }}>
-          <FileTextOutlined
-            style={{
-              fontSize: 48,
-              color: '#d9d9d9',
-              display: 'block',
-              marginBottom: 16,
-            }}
-          />
-          <div style={{ marginBottom: 8 }}>
-            <strong style={{ fontSize: 16 }}>No membership plans yet</strong>
-          </div>
-          <div style={{ color: '#8c8c8c', marginBottom: 24, fontSize: 14 }}>
-            Create your first plan to define pricing and durations for members.
-          </div>
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            Create First Plan
-          </Button>
-        </Card>
-      ) : (
+      {/* ── Loading ───────────────────────────────────────────────────────── */}
+      {plansLoading && (
+        <div style={{ textAlign: 'center', padding: '80px 0' }}>
+          <Spin size="large" />
+        </div>
+      )}
+
+      {/* ── Empty state ───────────────────────────────────────────────────── */}
+      {!plansLoading && !fetchError && plans.length === 0 && (
+        <EmptyState
+          icon={<FileTextOutlined />}
+          title="Create your first membership plan"
+          description="Plans define pricing and duration for your members. You need at least one plan before you can enrol members."
+          primaryActionLabel="Create Plan"
+          onPrimaryAction={openCreate}
+        />
+      )}
+
+      {/* ── Plans content — only when loaded and data exists ──────────────── */}
+      {!plansLoading && plans.length > 0 && (
         <>
           {/* ── Summary cards ────────────────────────────────────────────── */}
           <SectionDivider label="Overview" />
