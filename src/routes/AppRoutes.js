@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { restoreSessionThunk } from '../features/auth/authSlice';
-import Layout from '../components/layout/Layout';
+import ProtectedRoute from '../components/auth/ProtectedRoute';
 import Dashboard from '../pages/Dashboard';
 import Login from '../pages/Login';
 import Members from '../pages/Members';
@@ -19,17 +19,6 @@ import WorkoutBuilder from '../pages/WorkoutBuilder';
 import Diets from '../pages/Diets';
 import DietBuilder from '../pages/DietBuilder';
 
-// ─── Protected Route Guard ────────────────────────────────────────────────────
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, isRestoring } = useSelector((state) => state.auth);
-  if (isRestoring) return null; // wait — prevents flash-redirect to /login
-  return isAuthenticated ? (
-    <Layout>{children}</Layout>
-  ) : (
-    <Navigate to="/login" replace />
-  );
-};
-
 // ─── Routes ───────────────────────────────────────────────────────────────────
 const AppRoutes = () => {
   const dispatch = useDispatch();
@@ -39,8 +28,7 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-
+      <Route path="/login"       element={<Login />} />
       <Route
         path="/"
         element={

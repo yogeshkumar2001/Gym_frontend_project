@@ -316,67 +316,92 @@ const Plans = () => {
         />
       )}
 
-      {/* ── Summary cards ────────────────────────────────────────────────── */}
-      <SectionDivider label="Overview" />
-
-      <Row gutter={[16, 16]} style={{ marginBottom: 40 }}>
-        {summaryCards.map((card) => (
-          <Col key={card.title} xs={12} sm={12} md={6}>
-            <Card
-              styles={{ body: { padding: '20px 24px' } }}
-              style={{ borderTop: `3px solid ${card.color}` }}
-            >
-              <Row justify="space-between" align="top">
-                <Col>
-                  <Text type="secondary" style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    {card.title}
-                  </Text>
-                  {card.isText ? (
-                    <div>
-                      <Text strong style={{ fontSize: 22, display: 'block', lineHeight: '32px', color: card.color }}>
-                        {card.value}
-                      </Text>
-                      {card.sub && (
-                        <Text type="secondary" style={{ fontSize: 12 }}>{card.sub}</Text>
-                      )}
-                    </div>
-                  ) : (
-                    <Statistic
-                      value={card.value}
-                      valueStyle={{ fontSize: 28, fontWeight: 700, color: card.color }}
-                    />
-                  )}
-                </Col>
-                <Col>{card.icon}</Col>
-              </Row>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-
-      {/* ── Plans table ──────────────────────────────────────────────────── */}
-      <SectionDivider label="All Plans" />
-
-      <Row justify="end" style={{ marginBottom: 12 }}>
-        <Col xs={24} sm={12} md={8}>
-          <Input
-            prefix={<SearchOutlined />}
-            placeholder="Search plans..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            allowClear
+      {/* ── Empty state ──────────────────────────────────────────────────── */}
+      {!fetchError && plans.length === 0 ? (
+        <Card style={{ textAlign: 'center', padding: '48px 24px', marginTop: 8 }}>
+          <FileTextOutlined
+            style={{
+              fontSize: 48,
+              color: '#d9d9d9',
+              display: 'block',
+              marginBottom: 16,
+            }}
           />
-        </Col>
-      </Row>
+          <div style={{ marginBottom: 8 }}>
+            <strong style={{ fontSize: 16 }}>No membership plans yet</strong>
+          </div>
+          <div style={{ color: '#8c8c8c', marginBottom: 24, fontSize: 14 }}>
+            Create your first plan to define pricing and durations for members.
+          </div>
+          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+            Create First Plan
+          </Button>
+        </Card>
+      ) : (
+        <>
+          {/* ── Summary cards ────────────────────────────────────────────── */}
+          <SectionDivider label="Overview" />
 
-      <Table
-        dataSource={filteredPlans}
-        columns={columns}
-        rowKey="id"
-        pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `${total} plans` }}
-        size="middle"
-        bordered={false}
-      />
+          <Row gutter={[16, 16]} style={{ marginBottom: 40 }}>
+            {summaryCards.map((card) => (
+              <Col key={card.title} xs={12} sm={12} md={6}>
+                <Card
+                  styles={{ body: { padding: '20px 24px' } }}
+                  style={{ borderTop: `3px solid ${card.color}` }}
+                >
+                  <Row justify="space-between" align="top">
+                    <Col>
+                      <Text type="secondary" style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {card.title}
+                      </Text>
+                      {card.isText ? (
+                        <div>
+                          <Text strong style={{ fontSize: 22, display: 'block', lineHeight: '32px', color: card.color }}>
+                            {card.value}
+                          </Text>
+                          {card.sub && (
+                            <Text type="secondary" style={{ fontSize: 12 }}>{card.sub}</Text>
+                          )}
+                        </div>
+                      ) : (
+                        <Statistic
+                          value={card.value}
+                          valueStyle={{ fontSize: 28, fontWeight: 700, color: card.color }}
+                        />
+                      )}
+                    </Col>
+                    <Col>{card.icon}</Col>
+                  </Row>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+
+          {/* ── Plans table ──────────────────────────────────────────────── */}
+          <SectionDivider label="All Plans" />
+
+          <Row justify="end" style={{ marginBottom: 12 }}>
+            <Col xs={24} sm={12} md={8}>
+              <Input
+                prefix={<SearchOutlined />}
+                placeholder="Search plans..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                allowClear
+              />
+            </Col>
+          </Row>
+
+          <Table
+            dataSource={filteredPlans}
+            columns={columns}
+            rowKey="id"
+            pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `${total} plans` }}
+            size="middle"
+            bordered={false}
+          />
+        </>
+      )}
 
       {/* ── Plan form modal ───────────────────────────────────────────────── */}
       <PlanForm

@@ -3,7 +3,7 @@ import { Alert, Form, Input, Button, Card, Typography, Divider } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { loginThunk } from '../features/auth/authSlice';
+import { loginUser } from '../features/auth/authSlice';
 import { colors } from '../theme/theme';
 
 const { Title, Text } = Typography;
@@ -15,7 +15,7 @@ const Login = () => {
 
   const onFinish = async (values) => {
     try {
-      await dispatch(loginThunk(values)).unwrap();
+      await dispatch(loginUser(values)).unwrap();
       navigate('/');
     } catch {
       // error is already set in state.auth.error via rejected handler

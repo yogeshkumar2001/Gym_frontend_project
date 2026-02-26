@@ -1,5 +1,5 @@
 import React from 'react';
-import { Row, Col, Typography, Divider, Space, Tag } from 'antd';
+import { Row, Col, Typography, Divider, Space, Tag, Card } from 'antd';
 import {
   LineChartOutlined,
   RiseOutlined,
@@ -7,6 +7,7 @@ import {
   CheckCircleOutlined,
   DollarOutlined,
   ClockCircleOutlined,
+  BarChartOutlined,
 } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 import dayjs from 'dayjs';
@@ -102,6 +103,10 @@ const PerformancePage = () => {
   const memberGrowthData = useSelector(selectMemberGrowthData);
   const renewalData      = useSelector(selectRenewalData);
 
+  const membersEmpty = useSelector((s) => s.members.list.length === 0);
+  const paymentsEmpty = useSelector((s) => s.payments.list.length === 0);
+  const hasNoData = membersEmpty && paymentsEmpty;
+
   // Period badge — surfaces the active date range for user context
   const { startDate, endDate } = useSelector((state) => state.filters);
   const periodLabel = startDate && endDate
@@ -183,56 +188,71 @@ const PerformancePage = () => {
       {/* Global Filters — drives all three sections */}
       <GlobalFilters />
 
-      {/* ── Section 1: Period Snapshot ─────────────────────────────────────── */}
-      {/* Five live KPI cards showing current-period state — no comparisons.  */}
-      <SectionDivider label="Period Snapshot" />
+      {/* ── No-data empty state ─────────────────────────────────────────────── */}
+      {hasNoData ? (
+        <Card style={{ textAlign: 'center', padding: '56px 24px', marginTop: 8 }}>
+          <BarChartOutlined
+            style={{
+              fontSize: 48,
+              color: '#d9d9d9',
+              display: 'block',
+              marginBottom: 16,
+            }}
+          />
+          <div style={{ marginBottom: 8 }}>
+            <strong style={{ fontSize: 16 }}>No data to display yet</strong>
+          </div>
+          <div style={{ color: '#8c8c8c', fontSize: 14 }}>
+            Performance analytics will appear once your gym has members and payment records.
+          </div>
+        </Card>
+      ) : (
+        <>
+          {/* ── Section 1: Period Snapshot ──────────────────────────────────── */}
+          <SectionDivider label="Period Snapshot" />
 
-      <Row gutter={ROW_GUTTER}>
-        {snapshotCards.map((card) => (
-          <Col key={card.title} xs={12} sm={8} md={8} lg={4}>
-            <MetricCard {...card} />
-          </Col>
-        ))}
-      </Row>
+          <Row gutter={ROW_GUTTER}>
+            {snapshotCards.map((card) => (
+              <Col key={card.title} xs={12} sm={8} md={8} lg={4}>
+                <MetricCard {...card} />
+              </Col>
+            ))}
+          </Row>
 
-      {/* ── Section 2: Comparative Performance ────────────────────────────── */}
-      {/* Five trend KPIs — each shows primary value + % change + direction.  */}
-      {/* All five are surfaced here (vs four on the dashboard summary widget).*/}
-      <div style={SECTION_GAP}>
-        <SectionDivider label="Comparative Performance" />
+          {/* ── Section 2: Comparative Performance ─────────────────────────── */}
+          <div style={SECTION_GAP}>
+            <SectionDivider label="Comparative Performance" />
 
-        <Row gutter={ROW_GUTTER}>
-          {COMPARATIVE_KPIS.map(({ key, title, tooltip }) => (
-            <Col key={key} xs={24} sm={12} md={8} lg={4}>
-              <MetaKPICard title={title} kpi={metaKPIs[key]} tooltip={tooltip} />
-            </Col>
-          ))}
-        </Row>
-      </div>
+            <Row gutter={ROW_GUTTER}>
+              {COMPARATIVE_KPIS.map(({ key, title, tooltip }) => (
+                <Col key={key} xs={24} sm={12} md={8} lg={4}>
+                  <MetaKPICard title={title} kpi={metaKPIs[key]} tooltip={tooltip} />
+                </Col>
+              ))}
+            </Row>
+          </div>
 
-      {/* ── Section 3: Trends ─────────────────────────────────────────────── */}
-      {/* Revenue Trend + Member Growth Trend in a balanced side-by-side row. */}
-      {/* Renewal Forecast occupies the full width below for visual emphasis.  */}
-      <div style={SECTION_GAP}>
-        <SectionDivider label="Trends" />
+          {/* ── Section 3: Trends ───────────────────────────────────────────── */}
+          <div style={SECTION_GAP}>
+            <SectionDivider label="Trends" />
 
-        {/* Row 1: Revenue Trend — Member Growth Trend */}
-        <Row gutter={ROW_GUTTER}>
-          <Col xs={24} lg={12}>
-            <RevenueTrendChart data={revenueTrendData} />
-          </Col>
-          <Col xs={24} lg={12}>
-            <JoiningTrendChart data={memberGrowthData} />
-          </Col>
-        </Row>
+            <Row gutter={ROW_GUTTER}>
+              <Col xs={24} lg={12}>
+                <RevenueTrendChart data={revenueTrendData} />
+              </Col>
+              <Col xs={24} lg={12}>
+                <JoiningTrendChart data={memberGrowthData} />
+              </Col>
+            </Row>
 
-        {/* Row 2: Renewal / Retention Forecast — full width */}
-        <Row gutter={ROW_GUTTER} style={CHART_GAP}>
-          <Col xs={24}>
-            <RenewalForecastChart data={renewalData} />
-          </Col>
-        </Row>
-      </div>
+            <Row gutter={ROW_GUTTER} style={CHART_GAP}>
+              <Col xs={24}>
+                <RenewalForecastChart data={renewalData} />
+              </Col>
+            </Row>
+          </div>
+        </>
+      )}
     </div>
   );
 };

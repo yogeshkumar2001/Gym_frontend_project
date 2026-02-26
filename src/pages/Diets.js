@@ -268,62 +268,83 @@ const Diets = () => {
         </Col>
       </Row>
 
-      {/* ── Summary cards ────────────────────────────────────────────────── */}
-      <SectionDivider label="Overview" />
-
-      <Row gutter={[16, 16]} style={STYLES.cardsRow}>
-        {summaryCards.map((card) => (
-          <Col key={card.title} xs={12} sm={12} md={6}>
-            <Card
-              style={{ borderTop: `3px solid ${card.color}` }}
-              styles={{ body: STYLES.cardBody }}
-            >
-              <Row justify="space-between" align="top">
-                <Col>
-                  <Text style={STYLES.cardLabel}>{card.title}</Text>
-                  <Statistic
-                    value={card.value}
-                    valueStyle={{ ...STYLES.cardValue, color: card.color }}
-                  />
-                </Col>
-                <Col>{card.icon}</Col>
-              </Row>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-
-      {/* ── Templates table ───────────────────────────────────────────────── */}
-      <SectionDivider label="All Templates" />
-
-      <Row justify="end" style={STYLES.searchRow}>
-        <Col xs={24} sm={12} md={8}>
-          <Input
-            prefix={<SearchOutlined />}
-            placeholder="Search templates..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            allowClear
+      {/* ── Empty state ───────────────────────────────────────────────────── */}
+      {templates.length === 0 ? (
+        <Card style={{ textAlign: 'center', padding: '48px 24px', marginTop: 8 }}>
+          <FireOutlined
+            style={{
+              fontSize: 48,
+              color: '#d9d9d9',
+              display: 'block',
+              marginBottom: 16,
+            }}
           />
-        </Col>
-      </Row>
+          <div style={{ marginBottom: 8 }}>
+            <strong style={{ fontSize: 16 }}>No diet templates yet</strong>
+          </div>
+          <div style={{ color: '#8c8c8c', marginBottom: 24, fontSize: 14 }}>
+            Build structured nutrition programs to assign to your members.
+          </div>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/diets/new')}>
+            Create First Template
+          </Button>
+        </Card>
+      ) : (
+        <>
+          {/* ── Summary cards ──────────────────────────────────────────────── */}
+          <SectionDivider label="Overview" />
 
-      <Table
-        dataSource={filtered}
-        columns={columns}
-        rowKey="id"
-        pagination={{
-          pageSize:        10,
-          showSizeChanger: true,
-          showTotal:       (total) =>
-            `${total} template${total !== 1 ? 's' : ''}`,
-        }}
-        size="middle"
-        locale={{
-          emptyText:
-            'No diet templates yet. Click "Create Template" to get started.',
-        }}
-      />
+          <Row gutter={[16, 16]} style={STYLES.cardsRow}>
+            {summaryCards.map((card) => (
+              <Col key={card.title} xs={12} sm={12} md={6}>
+                <Card
+                  style={{ borderTop: `3px solid ${card.color}` }}
+                  styles={{ body: STYLES.cardBody }}
+                >
+                  <Row justify="space-between" align="top">
+                    <Col>
+                      <Text style={STYLES.cardLabel}>{card.title}</Text>
+                      <Statistic
+                        value={card.value}
+                        valueStyle={{ ...STYLES.cardValue, color: card.color }}
+                      />
+                    </Col>
+                    <Col>{card.icon}</Col>
+                  </Row>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+
+          {/* ── Templates table ─────────────────────────────────────────────── */}
+          <SectionDivider label="All Templates" />
+
+          <Row justify="end" style={STYLES.searchRow}>
+            <Col xs={24} sm={12} md={8}>
+              <Input
+                prefix={<SearchOutlined />}
+                placeholder="Search templates..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                allowClear
+              />
+            </Col>
+          </Row>
+
+          <Table
+            dataSource={filtered}
+            columns={columns}
+            rowKey="id"
+            pagination={{
+              pageSize:        10,
+              showSizeChanger: true,
+              showTotal:       (total) =>
+                `${total} template${total !== 1 ? 's' : ''}`,
+            }}
+            size="middle"
+          />
+        </>
+      )}
     </div>
   );
 };

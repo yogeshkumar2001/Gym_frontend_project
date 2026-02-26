@@ -1,13 +1,15 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Typography, Button, Form, Modal, Row, Col, Statistic, Card, message, Alert } from 'antd';
+import { Typography, Button, Form, Modal, Row, Col, Statistic, Card, message, Alert, Space } from 'antd';
 import {
   PlusOutlined,
   TeamOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   ExclamationCircleOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
   fetchMembersThunk,
   createMemberThunk,
@@ -77,6 +79,7 @@ const SummaryCards = () => {
 // ─── Members Page ─────────────────────────────────────────────────────────────
 const Members = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [form] = Form.useForm();
   const [modalState, setModalState] = useState({ open: false, member: null });
   const [messageApi, contextHolder] = message.useMessage();
@@ -85,6 +88,7 @@ const Members = () => {
 
   const filteredMembers = useSelector(selectFilteredMembers);
   const loading         = useSelector(selectMembersLoading);
+  const totalCount      = useSelector(selectTotalCount);
   const fetchError      = useSelector((s) => s.members.error);
 
   // ── Modal helpers ──────────────────────────────────────────────────────────
@@ -192,16 +196,46 @@ const Members = () => {
       {/* Quick Stats */}
       <SummaryCards />
 
-      {/* Global Filters */}
-      <GlobalFilters />
+      {/* Empty state — shown when gym has no members yet */}
+      {!loading && !fetchError && totalCount === 0 ? (
+        <Card style={{ textAlign: 'center', padding: '40px 24px', marginTop: 8 }}>
+          <TeamOutlined
+            style={{
+              fontSize: 48,
+              color: '#d9d9d9',
+              display: 'block',
+              marginBottom: 16,
+            }}
+          />
+          <div style={{ marginBottom: 8 }}>
+            <strong style={{ fontSize: 16 }}>No members yet</strong>
+          </div>
+          <div style={{ color: '#8c8c8c', marginBottom: 24, fontSize: 14 }}>
+            Add your first member manually or import a list from a CSV file.
+          </div>
+          <Space size={12}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>
+              Add Member
+            </Button>
+            <Button icon={<UploadOutlined />} onClick={() => navigate('/upload')}>
+              Import CSV
+            </Button>
+          </Space>
+        </Card>
+      ) : (
+        <>
+          {/* Global Filters */}
+          <GlobalFilters />
 
-      {/* Table */}
-      <MembersTable
-        data={filteredMembers}
-        loading={loading}
-        onEdit={openEdit}
-        onDelete={handleDelete}
-      />
+          {/* Table */}
+          <MembersTable
+            data={filteredMembers}
+            loading={loading}
+            onEdit={openEdit}
+            onDelete={handleDelete}
+          />
+        </>
+      )}
 
       {/* Add / Edit Modal */}
       <MemberModal

@@ -1,8 +1,34 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { login as loginApi, register as registerApi, getMe } from '../../services/api';
+import { login as loginApi, getMe } from '../../services/api';
 
-// ─── Thunks ───────────────────────────────────────────────────────────────────
+// ─── Async Thunks ─────────────────────────────────────────────────────────────
 
+/**
+ * loginUser — authenticates with the backend.
+ * Stores accessToken in localStorage, returns { user, token }.
+ */
+export const loginUser = createAsyncThunk(
+  'auth/loginUser',
+  async (credentials, { rejectWithValue }) => {
+    try {
+      const result = await loginApi(credentials);
+      localStorage.setItem('gym_token', result.accessToken);
+      return { user: result.user, token: result.accessToken };
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message ?? 'Invalid email or password'
+      );
+    }
+  }
+);
+
+/**
+ * restoreSessionThunk — called once on app cold-load.
+ *
+ * Checks localStorage for a stored token, then validates it by calling
+ * GET /auth/me. On success the user is restored into Redux without requiring
+ * a new login. On failure the stale token is removed.
+ */
 export const restoreSessionThunk = createAsyncThunk(
   'auth/restoreSession',
   async (_, { rejectWithValue }) => {
@@ -10,7 +36,7 @@ export const restoreSessionThunk = createAsyncThunk(
     if (!token) return rejectWithValue('no token');
     try {
       const result = await getMe();
-      return result.data; // user object
+      return { user: result.data, token };
     } catch {
       localStorage.removeItem('gym_token');
       return rejectWithValue('session expired');
@@ -18,80 +44,60 @@ export const restoreSessionThunk = createAsyncThunk(
   }
 );
 
-export const loginThunk = createAsyncThunk(
-  'auth/login',
-  async (credentials, { rejectWithValue }) => {
-    try {
-      // Axios interceptor unwraps response.data, so result is already
-      // { success, token, user } — NOT nested under result.data
-      const result = await loginApi(credentials);
-      localStorage.setItem('gym_token', result.token);
-      return result.user;
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message ?? 'Login failed');
-    }
-  }
-);
-
-export const registerThunk = createAsyncThunk(
-  'auth/register',
-  async (data, { rejectWithValue }) => {
-    try {
-      const result = await registerApi(data);
-      localStorage.setItem('gym_token', result.token);
-      return result.user;
-    } catch (err) {
-      return rejectWithValue(err.response?.data?.message ?? 'Registration failed');
-    }
-  }
-);
-
-// ─── Slice ────────────────────────────────────────────────────────────────────
+// ─── State ────────────────────────────────────────────────────────────────────
 
 const initialState = {
-  user: null,
+  user:            null,
+  token:           null,
   isAuthenticated: false,
-  isRestoring: true,  // true until first session-restore attempt completes
-  loading: false,
-  error: null,
+  isRestoring:     true,   // blocks ProtectedRoute until restore attempt settles
+  loading:         false,
+  error:           null,
 };
+
+// ─── Slice ────────────────────────────────────────────────────────────────────
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    // Kept for backward compatibility — prefer loginThunk for new code
-    loginStart:   (state)         => { state.loading = true; state.error = null; },
-    loginSuccess: (state, action) => { state.loading = false; state.isAuthenticated = true; state.user = action.payload; },
-    loginFailure: (state, action) => { state.loading = false; state.error = action.payload; },
-
     logout: () => {
       localStorage.removeItem('gym_token');
-      return { ...initialState, isRestoring: false }; // logout is complete — no restore needed
+      return { ...initialState, isRestoring: false };
     },
   },
   extraReducers: (builder) => {
     builder
-      // restoreSession — clears isRestoring flag once we know the auth state
-      .addCase(restoreSessionThunk.fulfilled, (state, action) => {
-        state.isRestoring = false;
+      // ── loginUser ───────────────────────────────────────────────────────────
+      .addCase(loginUser.pending, (state) => {
+        state.loading = true;
+        state.error   = null;
+      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.loading         = false;
         state.isAuthenticated = true;
-        state.user = action.payload;
+        state.user            = action.payload.user;
+        state.token           = action.payload.token;
+        state.error           = null;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error   = action.payload;
+      })
+
+      // ── restoreSession ──────────────────────────────────────────────────────
+      .addCase(restoreSessionThunk.fulfilled, (state, action) => {
+        state.isRestoring     = false;
+        state.isAuthenticated = true;
+        state.user            = action.payload.user;
+        state.token           = action.payload.token;
       })
       .addCase(restoreSessionThunk.rejected, (state) => {
-        state.isRestoring = false;
+        state.isRestoring     = false;
         state.isAuthenticated = false;
-      })
-
-      .addCase(loginThunk.pending,    (state)         => { state.loading = true;  state.error = null; })
-      .addCase(loginThunk.fulfilled,  (state, action) => { state.loading = false; state.isAuthenticated = true; state.user = action.payload; })
-      .addCase(loginThunk.rejected,   (state, action) => { state.loading = false; state.error = action.payload; })
-
-      .addCase(registerThunk.pending,   (state)         => { state.loading = true;  state.error = null; })
-      .addCase(registerThunk.fulfilled, (state, action) => { state.loading = false; state.isAuthenticated = true; state.user = action.payload; })
-      .addCase(registerThunk.rejected,  (state, action) => { state.loading = false; state.error = action.payload; });
+      });
   },
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout } = authSlice.actions;
+export const { logout } = authSlice.actions;
 export default authSlice.reducer;

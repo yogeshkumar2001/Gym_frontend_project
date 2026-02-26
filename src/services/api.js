@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // ─── Axios Instance ───────────────────────────────────────────────────────────
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api/v1',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:4000/api/v1',
   timeout: 10000,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -22,8 +22,16 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('gym_token');
-      window.location.href = '/login';
+      // Skip the redirect for the login endpoint itself — a wrong-password 401
+      // should be handled by the loginUser thunk (rejectWithValue → error Alert),
+      // not treated as an expired session.
+      const isLoginRequest = error.config?.url?.includes('/auth/login');
+      if (!isLoginRequest) {
+        // Token is expired or invalid on a protected endpoint. Clear stored
+        // credentials and force re-login. Hard navigation resets Redux cleanly.
+        localStorage.removeItem('gym_token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -42,8 +50,8 @@ export const buildQueryParams = (filters = {}) => {
 };
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
-// POST /auth/login    → { success, data: { token, user } }
-// POST /auth/register → { success, data: { token, user } }
+// POST /auth/login    → { success, accessToken, user: { id, name, email, role } }
+// POST /auth/register → { success, accessToken, user: { id, name, email, role } }
 // GET  /auth/me       → { success, data: user }
 export const login    = (credentials) => api.post('/auth/login', credentials);
 export const register = (data)        => api.post('/auth/register', data);
